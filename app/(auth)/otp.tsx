@@ -3,12 +3,15 @@ import axios from "axios";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 const OtpScreen = () => {
@@ -16,19 +19,16 @@ const OtpScreen = () => {
     useLocalSearchParams();
   const [otpInput, setOtpInput] = useState<string[]>(Array(6).fill(""));
   const inputs = useRef<Array<TextInput | null>>([]);
+  const [loading, setLoading] = useState(false);
+  
 
-  useEffect(() => {
-    if (otp && typeof otp === "string") {
-      const digits = otp.split("").slice(0, 6);
-      setOtpInput(digits);
-      Toast.show({
-        type: "success",
-        text1: "OTP Sent",
-        text2: `Your OTP is: ${otp}`,
-        position: "top",
-      });
-    }
-  }, [otp]);
+  // useEffect(() => {
+  //   if (otp && typeof otp === "string") {
+  //     const digits = otp.split("").slice(0, 6);
+  //     setOtpInput(digits);
+       
+  //   }
+  // }, [otp]);
 
   const handleChange = (text: string, index: number) => {
     if (/^\d$/.test(text)) {
@@ -70,6 +70,8 @@ console.log('regIddddddddd', regId)
   // };
 
 const handleSubmit = async () => {
+  if (loading) return; // Prevent double submission
+    setLoading(true);
   const enteredOtp = otpInput.join("");
 
   if (enteredOtp !== otp) {
@@ -135,17 +137,21 @@ const handleSubmit = async () => {
       text2: error?.response?.data?.message || "Please try again.",
       position: "top",
     });
+  }finally {
+    setLoading(false); // Reset loading regardless of outcome
   }
 };
 
 
 
   return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
+          <StatusBar barStyle="dark-content" backgroundColor="#fff" />
     <View style={styles.container}>
       <Text style={styles.title}>Enter OTP</Text>
       <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
         <Text style={styles.subtitle}>
-          A 6-digit verification code was sent to your phone.
+        OTP sent to your WhatsApp and Email.
         </Text>
         <View style={styles.otpContainer}>
           {otpInput.map((digit, index) => (
@@ -166,7 +172,7 @@ const handleSubmit = async () => {
           ))}
         </View>
         <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-          <Text style={styles.buttonText}>Verify</Text>
+           {loading ? <ActivityIndicator size="large" color="#fff" />: <Text style={styles.buttonText}>Verify</Text> }  
         </TouchableOpacity>
         <TouchableOpacity>
           <Text style={styles.resendText}>Resend OTP</Text>
@@ -174,6 +180,7 @@ const handleSubmit = async () => {
       </View>
       <Toast />
     </View>
+    </SafeAreaView>
   );
 };
 
@@ -183,6 +190,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+    
   },
   title: {
     fontSize: 26,

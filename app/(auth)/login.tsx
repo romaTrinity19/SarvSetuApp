@@ -5,6 +5,7 @@ import axios from "axios";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Platform,
   StatusBar,
@@ -24,8 +25,11 @@ export default function LoginScreen() {
   const [secureText, setSecureText] = useState(true);
   const [role, setRole] = useState("");
   const navigation = useNavigation();
+   const [loading, setLoading] = useState(false);
 
   const handleSignIn = async () => {
+    if (loading) return; // Prevent double submission
+    setLoading(true);
     if (!email || !role || !password) {
       Toast.show({
         type: "Error",
@@ -76,12 +80,14 @@ export default function LoginScreen() {
       }
       Toast.show({
         type: "error",
-        text1: "Login Failed",
+        text1:  error.response?.data?.message ||
+          "Something went wrong. Please try again.", 
         text2:
-          error.response?.data?.message ||
-          "Something went wrong. Please try again.",
+         "Login Failed",
         position: "top",
       });
+    }finally {
+    setLoading(false);
     }
   };
 
@@ -169,7 +175,8 @@ export default function LoginScreen() {
           </View>
 
           <TouchableOpacity style={styles.loginButton} onPress={handleSignIn}>
-            <Text style={styles.loginText}>Log In</Text>
+             {loading ? <ActivityIndicator size="large" color="#fff" />:   <Text style={styles.loginText}>Log In</Text> }
+           
           </TouchableOpacity>
 
           <Text style={styles.footerText}>

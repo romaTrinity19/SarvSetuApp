@@ -4,14 +4,15 @@ import axios from "axios";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-    Alert,
-    Platform,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Platform,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -19,8 +20,11 @@ import Toast from "react-native-toast-message";
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
   const navigation = useNavigation();
+  const [loading, setLoading] = useState(false);
 
   const handleForgotPassword = async () => {
+    if (loading) return; // Prevent double submission
+    setLoading(true);
     if (!email) {
       Toast.show({
         type: "error",
@@ -35,7 +39,7 @@ export default function ForgotPasswordScreen() {
       const response = await axios.post(
         "https://sarvsetu.trinitycrm.in/admin/Api/registration_api.php",
         {
-          type: "forgot_password",
+          type: "forget_password",
           email: email,
         },
         {
@@ -65,42 +69,51 @@ export default function ForgotPasswordScreen() {
         text2: error?.response?.data?.message || "Please try again.",
         position: "top",
       });
+    } finally {
+      setLoading(false); // Reset loading regardless of outcome
     }
   };
 
   return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#fff"}}  edges={['top']}>   
-          <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Feather name="arrow-left" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.heading}>Forgot Password</Text>
-        <Text style={styles.subHeading}>
-          Enter your email and we’ll send a reset link.
-        </Text>
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            <Feather name="arrow-left" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.heading}>Forgot Password</Text>
+          <Text style={styles.subHeading}>
+            Enter your email and we’ll send a reset link.
+          </Text>
+        </View>
 
-      <View style={{ paddingHorizontal: 20, paddingTop: 30 }}>
-        <Text style={styles.label}>Email Address</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter your email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
+        <View style={{ paddingHorizontal: 20, paddingTop: 30 }}>
+          <Text style={styles.label}>Email Address</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
 
-        <TouchableOpacity style={styles.submitButton} onPress={handleForgotPassword}>
-          <Text style={styles.submitText}>Continue</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.submitButton}
+            onPress={handleForgotPassword}
+          >
+            {loading ? (
+              <ActivityIndicator size="large" color="#fff" />
+            ) : (
+              <Text style={styles.submitText}>Continue</Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
     </SafeAreaView>
   );
 }

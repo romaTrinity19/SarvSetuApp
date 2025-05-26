@@ -6,6 +6,7 @@ import { router } from "expo-router";
 import * as Sharing from "expo-sharing";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   Modal,
   ScrollView,
@@ -54,8 +55,8 @@ type AdCardProps = {
 const AdCard: React.FC<AdCardProps> = ({ imageSrc, payout, subscription }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [uploadDisabled, setUploadDisabled] = useState(false);
-  const [userData, setUserData] = useState<any>(null);
-const [fullscreenVisible, setFullscreenVisible] = useState(false);
+  const [fullscreenVisible, setFullscreenVisible] = useState(false);
+const [isSubscribe , setIsSubscribe] = useState(false);
 
   const shareImageOnWhatsApp = async () => {
     try {
@@ -86,27 +87,14 @@ const [fullscreenVisible, setFullscreenVisible] = useState(false);
 
     if (!result.canceled) {
       setUploadDisabled(true);
-      // Do your upload logic here if needed
       console.log("Image uploaded:", result.assets[0].uri);
     }
   };
 
-  const getUserData = async () => {
-    const userDataString = await AsyncStorage.getItem("userData");
-    if (userDataString) {
-      const userData = JSON.parse(userDataString);
-      console.log("Stored User Data:", userData);
-      setUserData(userData);
-    }
-  };
-  useEffect(() => {
-    getUserData();
-  }, []);
-
   return (
     <View style={styles.card}>
       <View style={styles.payoutBadge}>
-        <Text style={styles.payoutText}>Payout: ₹{payout.toFixed(2)}</Text>
+        <Text style={styles.payoutText}>Payout: ₹{payout}</Text>
       </View>
       <TouchableOpacity onPress={() => setFullscreenVisible(true)}>
         <Image
@@ -185,7 +173,7 @@ const [fullscreenVisible, setFullscreenVisible] = useState(false);
         </View>
       </Modal>
 
-       {/* 🔍 Fullscreen Image Modal */}
+      {/* 🔍 Fullscreen Image Modal */}
       <Modal
         visible={fullscreenVisible}
         transparent={true}
@@ -238,25 +226,58 @@ const Header = () => {
 };
 
 const App = () => {
+  const [ads, setAds] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const response = await fetch(
+        "https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=dashboard"
+      );
+      const json = await response.json();
+      console.log("dashboard data:", JSON.stringify(json, null, 2));
+
+      if (json.status === "success" && json.message?.add_data) {
+        setAds(json.message.add_data);
+      } else {
+        console.warn("Invalid data format");
+      }
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  console.log("dashboard dataaaa", ads);
+
+  if (loading) {
+    return <ActivityIndicator size="large" />;
+  }
+
   return (
-     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff"}}  edges={['top']}>  
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-    <View style={{ flex: 1  }}>
-      <Header />
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={{ paddingTop: 8 }}
-      >
-        {adsData.map((ad) => (
-          <AdCard
-            key={ad.id}
-            imageSrc={ad.image}
-            payout={ad.payout}
-            subscription={ad.subscription}
-          />
-        ))}
-      </ScrollView>
-    </View>
+      <View style={{ flex: 1 }}>
+        <Header />
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={{ paddingTop: 8 }}
+        >
+          {ads?.map((ad) => (
+            <AdCard
+              key={ad.ads_id}
+              imageSrc={ad.imagepath}
+              payout={ad.payamt}
+             subscription={ad?.is_subscribe}
+            />
+          ))}
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };
@@ -416,17 +437,16 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   fullscreenOverlay: {
-  flex: 1,
-  backgroundColor: "rgba(0,0,0,0.95)",
-  justifyContent: "center",
-  alignItems: "center",
-},
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.95)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
 
-fullscreenImage: {
-  width: "100%",
-  height: "100%",
-},
-
+  fullscreenImage: {
+    width: "100%",
+    height: "100%",
+  },
 });
 
 export default App;

@@ -24,11 +24,10 @@ const TermsOfUseScreen = () => {
 
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 30 }}>
         <Text style={styles.updatedText}>Last updated on 12/12/2023 at 11:11:03</Text>
-
         <Text style={styles.paragraph}>
           These Terms and Conditions, along with privacy policy (collectively, the "Terms") constitute a binding agreement...
-        </Text>
-
+       </Text>
+ 
         <Text style={styles.paragraph}>
           governed by and between ACORE TECHNOLOGY Services (called, “Website Owner” or "we" or "our" or "us") and you.
         </Text>
@@ -161,7 +160,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderBottomWidth: 1,
     borderColor: "#ccc",
-    paddingTop:35
+    paddingTop:20
   },
   headerText: {
     fontSize: 18,

@@ -5,6 +5,7 @@ import axios from "axios";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Platform,
   ScrollView,
@@ -44,6 +45,7 @@ const SignUpScreen = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [states, setStates] = useState<State[]>([]);
   const [selectedState, setSelectedState] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchStates = async () => {
@@ -65,6 +67,8 @@ const SignUpScreen = () => {
   }, []);
 
   const handleSignUp = async () => {
+    if (loading) return; // Prevent double submission
+    setLoading(true);
     if (
       !firstName ||
       !lastName ||
@@ -92,7 +96,6 @@ const SignUpScreen = () => {
         text2: "Passwords do not match.",
         position: "top",
       });
-
       return;
     }
 
@@ -120,7 +123,6 @@ const SignUpScreen = () => {
       console.log("response registerddfdg OTP", data);
 
       if (data.status === "success") {
-        await AsyncStorage.setItem("isRegistered", "true");
         console.log("Response reg idddddddddddd:", data.data.reg_id);
 
         router.push({
@@ -157,7 +159,9 @@ const SignUpScreen = () => {
           "Something went wrong. Please try again.",
         position: "top",
       });
-    }
+    } finally {
+    setLoading(false); // Reset loading regardless of outcome
+  }
   };
 
   return (
@@ -308,13 +312,13 @@ const SignUpScreen = () => {
 
           {/* Submit Button */}
           <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
-            <Text style={styles.signUpText}>Sign Up</Text>
+            {loading ? <ActivityIndicator size="large" color="#fff" />: <Text style={styles.signUpText}>Sign Up</Text> }
           </TouchableOpacity>
 
           <Text style={styles.footerText}>
             By signing up, agree to the{" "}
-            <Text style={styles.link}>Terms Of Use</Text> and{" "}
-            <Text style={styles.link}>Data Deletion Policy</Text>
+            <Text style={styles.link}    onPress={() => router.push("/(components)/termsOfUse")}>Terms Of Use</Text> and{" "}
+            <Text style={styles.link} onPress={() => router.push("/(components)/dataDeletetionPolicy")}>Data Deletion Policy</Text>
           </Text>
         </View>
       </ScrollView>

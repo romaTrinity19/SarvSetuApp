@@ -54,7 +54,7 @@ const AccountScreen = () => {
         <MenuItem title="Help" subtitle="Learn Easily with Video Guides" route='/(components)/franchise'/>
         <MenuItem title="Contact Us" subtitle="Reach us anytime, anywhere!" route='/(components)/contactUs'/>
 
-        <TouchableOpacity style={styles.logoutButton}>
+        <TouchableOpacity style={styles.logoutButton} onPress={()=>router.push('/(auth)/login')}>
           <Text style={styles.logoutText}>Log out</Text>
         </TouchableOpacity>
 
