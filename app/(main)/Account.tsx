@@ -3,17 +3,21 @@ import { router } from "expo-router";
 import React from "react";
 import {
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const AccountScreen = () => {
   const name = "roma Chakradhari";
   const initial = name.charAt(0).toUpperCase();
 
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}  edges={['top']}> 
+     <StatusBar barStyle="dark-content" backgroundColor="#fff" />
     <View style={styles.container}>
       {/* Sticky Header */}
       <View style={styles.headerContainer}>
@@ -61,6 +65,7 @@ const AccountScreen = () => {
         </View>
       </ScrollView>
     </View>
+    </SafeAreaView>
   );
 };
 

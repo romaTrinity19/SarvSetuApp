@@ -1,18 +1,21 @@
 import Feather from "@expo/vector-icons/Feather";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Asset } from "expo-asset";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import * as Sharing from "expo-sharing";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Image,
   Modal,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const adsData = [
   {
@@ -24,20 +27,19 @@ const adsData = [
   },
   {
     id: 2,
-    image: require('../../assets/images/image.jpeg'),
+    image: require("../../assets/images/image.jpeg"),
     payout: 12.0,
     subscription: false,
   },
   {
     id: 3,
-    image:
-     require('../../assets/images/adbisImage.webp'),
+    image: require("../../assets/images/adbisImage.webp"),
     payout: 12.0,
     subscription: true,
   },
   {
     id: 4,
-    image: require('../../assets/images/headphone.webp'),
+    image: require("../../assets/images/headphone.webp"),
     payout: 12.0,
     subscription: false,
   },
@@ -52,6 +54,8 @@ type AdCardProps = {
 const AdCard: React.FC<AdCardProps> = ({ imageSrc, payout, subscription }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [uploadDisabled, setUploadDisabled] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
+const [fullscreenVisible, setFullscreenVisible] = useState(false);
 
   const shareImageOnWhatsApp = async () => {
     try {
@@ -87,16 +91,30 @@ const AdCard: React.FC<AdCardProps> = ({ imageSrc, payout, subscription }) => {
     }
   };
 
+  const getUserData = async () => {
+    const userDataString = await AsyncStorage.getItem("userData");
+    if (userDataString) {
+      const userData = JSON.parse(userDataString);
+      console.log("Stored User Data:", userData);
+      setUserData(userData);
+    }
+  };
+  useEffect(() => {
+    getUserData();
+  }, []);
+
   return (
     <View style={styles.card}>
       <View style={styles.payoutBadge}>
         <Text style={styles.payoutText}>Payout: ₹{payout.toFixed(2)}</Text>
       </View>
-      <Image
-        source={typeof imageSrc === "string" ? { uri: imageSrc } : imageSrc}
-        style={styles.image}
-        resizeMode="cover"
-      />
+      <TouchableOpacity onPress={() => setFullscreenVisible(true)}>
+        <Image
+          source={typeof imageSrc === "string" ? { uri: imageSrc } : imageSrc}
+          style={styles.image}
+          resizeMode="cover"
+        />
+      </TouchableOpacity>
 
       <View style={styles.buttonGroup}>
         <TouchableOpacity
@@ -120,7 +138,7 @@ const AdCard: React.FC<AdCardProps> = ({ imageSrc, payout, subscription }) => {
           onPress={() => {
             if (subscription && !uploadDisabled) {
               //pickAndUploadImage();
-              router.push('/(components)/uploadImage')
+              router.push("/(components)/uploadImage");
             } else if (!subscription) {
               setModalVisible(true);
             }
@@ -166,21 +184,54 @@ const AdCard: React.FC<AdCardProps> = ({ imageSrc, payout, subscription }) => {
           </View>
         </View>
       </Modal>
+
+       {/* 🔍 Fullscreen Image Modal */}
+      <Modal
+        visible={fullscreenVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setFullscreenVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.fullscreenOverlay}
+          onPress={() => setFullscreenVisible(false)}
+        >
+          <Image
+            source={typeof imageSrc === "string" ? { uri: imageSrc } : imageSrc}
+            style={styles.fullscreenImage}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
 
 const Header = () => {
-  const name = "roma Chakradhari";
-  const initial = name.charAt(0).toUpperCase();
-
+  const [userData, setUserData] = useState<any>(null);
+  const name = userData?.firstName;
+  console.log("nameww", name);
+  const initial = name?.charAt(0).toUpperCase();
+  const getUserData = async () => {
+    const userDataString = await AsyncStorage.getItem("userData");
+    if (userDataString) {
+      const userData = JSON.parse(userDataString);
+      console.log("Stored User Data:", userData);
+      setUserData(userData);
+    }
+  };
+  useEffect(() => {
+    getUserData();
+  }, []);
   return (
     <View style={styles.headerContainer}>
       <View style={styles.initialCircle}>
         <Text style={styles.initialText}>{initial}</Text>
       </View>
       <View style={styles.headerTextContainer}>
-        <Text style={styles.profileName}>{name}</Text>
+        <Text style={styles.profileName}>
+          {name} {userData?.lastName}
+        </Text>
       </View>
     </View>
   );
@@ -188,7 +239,9 @@ const Header = () => {
 
 const App = () => {
   return (
-    <View style={{ flex: 1 }}>
+     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff"}}  edges={['top']}>  
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+    <View style={{ flex: 1  }}>
       <Header />
       <ScrollView
         style={styles.container}
@@ -204,6 +257,7 @@ const App = () => {
         ))}
       </ScrollView>
     </View>
+    </SafeAreaView>
   );
 };
 
@@ -212,10 +266,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop: 35,
+    paddingTop: 20,
     paddingBottom: 12,
     backgroundColor: "#fff",
-    elevation: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -362,6 +415,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
   },
+  fullscreenOverlay: {
+  flex: 1,
+  backgroundColor: "rgba(0,0,0,0.95)",
+  justifyContent: "center",
+  alignItems: "center",
+},
+
+fullscreenImage: {
+  width: "100%",
+  height: "100%",
+},
+
 });
 
 export default App;

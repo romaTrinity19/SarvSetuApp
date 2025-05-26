@@ -146,7 +146,7 @@ const SignUpScreen = () => {
 const styles = StyleSheet.create({
   container: {
     paddingBottom: 15,
-    paddingTop: 30,
+     
     backgroundColor: "#fff",
   },
   header: {

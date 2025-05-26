@@ -1,78 +1,157 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 
 const OtpScreen = () => {
-  const [otp, setOtp] = useState(Array(6).fill(""));
-  const inputs = useRef<(TextInput | null)[]>([]);
+  const { otp, role, regId, firstName, lastName, password, email, phone } =
+    useLocalSearchParams();
+  const [otpInput, setOtpInput] = useState<string[]>(Array(6).fill(""));
+  const inputs = useRef<Array<TextInput | null>>([]);
+
+  useEffect(() => {
+    if (otp && typeof otp === "string") {
+      const digits = otp.split("").slice(0, 6);
+      setOtpInput(digits);
+      Toast.show({
+        type: "success",
+        text1: "OTP Sent",
+        text2: `Your OTP is: ${otp}`,
+        position: "top",
+      });
+    }
+  }, [otp]);
 
   const handleChange = (text: string, index: number) => {
     if (/^\d$/.test(text)) {
-      const newOtp = [...otp];
+      const newOtp = [...otpInput];
       newOtp[index] = text;
-      setOtp(newOtp);
+      setOtpInput(newOtp);
 
       if (index < 5) {
         inputs.current[index + 1]?.focus();
       }
     } else if (text === "") {
-      const newOtp = [...otp];
+      const newOtp = [...otpInput];
       newOtp[index] = "";
-      setOtp(newOtp);
+      setOtpInput(newOtp);
     }
   };
+console.log('regIddddddddd', regId)
 
-  const handleSubmit = async () => {
-  const enteredOtp = otp.join("");
-  console.log("Entered OTP:", enteredOtp);
+  // const handleSubmit = async () => {
+  //   const enteredOtp = otpInput.join("");
+
+  //   if (enteredOtp !== otp) {
+  //     Toast.show({
+  //       type: "error",
+  //       text1: "Invalid OTP",
+  //       text2: "Please enter the correct OTP.",
+  //       position: "top",
+  //     });
+  //     return;
+  //   }
+
+  //   try {
+  //     const normalizedRole = Array.isArray(role) ? role[0] : role;
+ 
+  //     router.push("/(main)/Home");
+  //   } catch (error) {
+  //     console.log("Error saving role:", error);
+  //   }
+  // };
+
+const handleSubmit = async () => {
+  const enteredOtp = otpInput.join("");
+
+  if (enteredOtp !== otp) {
+    Toast.show({
+      type: "error",
+      text1: "Invalid OTP",
+      text2: "Please enter the correct OTP.",
+      position: "top",
+    });
+    return;
+  }
 
   try {
-  const normalizedRole = Array.isArray(role) ? role[0] : role;
-    await AsyncStorage.setItem("userRole", normalizedRole);
-    router.push("/(main)/Home");
-  } catch (error) {
-    console.log("Error saving role:", error);
+    const response = await axios.post(
+      "https://sarvsetu.trinitycrm.in/admin/Api/registration_api.php",
+      {
+        type: "update_verification",
+        reg_id: regId, // Make sure regId is a string or number
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("RAW response:", response);
+    console.log("Parsed response.data:", response.data);
+
+    if (response.data && response.data.status === "success") {
+
+      const userData = {
+        regId,
+        role,
+        firstName,
+        lastName,
+        email,
+        phone,
+        password,
+      };
+
+      await AsyncStorage.setItem("userData", JSON.stringify(userData));
+      Toast.show({
+        type: "success",
+        text1: "Verification Successful",
+        text2: response.data.message || "User Registered Successfully",
+        position: "top",
+      });
+      router.push("/(auth)/login");
+    } else {
+      Toast.show({
+        type: "error",
+        text1: "Verification Failed",
+        text2: response.data.message || "Please try again.",
+        position: "top",
+      });
+    }
+  } catch (error: any) {
+    console.error("OTP Verification Error:", error);
+    Toast.show({
+      type: "error",
+      text1: "Network Error",
+      text2: error?.response?.data?.message || "Please try again.",
+      position: "top",
+    });
   }
 };
 
-   const {
-    firstName,
-    lastName,
-    email,
-    phone,
-    state,
-    role,
-    referral,
-    password,
-  } = useLocalSearchParams();
-  console.log(firstName,
-    lastName,
-    email,
-    phone,
-    state,
-    role,
-    referral,
-    password,)
+
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Enter OTP</Text>
-
       <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
         <Text style={styles.subtitle}>
           A 6-digit verification code was sent to your phone.
         </Text>
         <View style={styles.otpContainer}>
-          {otp.map((digit, index) => (
+          {otpInput.map((digit, index) => (
             <TextInput
               key={index}
-              ref={(ref) => {
+              ref={(ref: TextInput | null) => {
                 inputs.current[index] = ref;
               }}
               style={styles.otpInput}
@@ -81,18 +160,19 @@ const OtpScreen = () => {
               value={digit}
               onChangeText={(text) => handleChange(text, index)}
               autoFocus={index === 0}
+              textContentType="oneTimeCode"
+              autoComplete="sms-otp"
             />
           ))}
         </View>
-
         <TouchableOpacity style={styles.button} onPress={handleSubmit}>
           <Text style={styles.buttonText}>Verify</Text>
         </TouchableOpacity>
-
         <TouchableOpacity>
           <Text style={styles.resendText}>Resend OTP</Text>
         </TouchableOpacity>
       </View>
+      <Toast />
     </View>
   );
 };
@@ -103,8 +183,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    // paddingTop: Platform.OS === 'ios' ? 80 : 60,
-    paddingTop: 30,
   },
   title: {
     fontSize: 26,

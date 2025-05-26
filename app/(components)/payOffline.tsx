@@ -1,4 +1,11 @@
-import { Feather, Ionicons } from "@expo/vector-icons";
+import {
+  Feather,
+  FontAwesome,
+  FontAwesome5,
+  Ionicons,
+  MaterialCommunityIcons,
+  MaterialIcons,
+} from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -13,11 +20,19 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useLocalSearchParams } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
+import { ImagePickerAsset } from "expo-image-picker";
+import Toast from "react-native-toast-message";
 
 export default function PaymentInformation() {
   const [selectedMethod, setSelectedMethod] = useState(null);
-   const [modalVisible, setModalVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
   const [transactionId, setTransactionId] = useState("");
+  const { label, value, amount } = useLocalSearchParams();
+  const [selectedImage, setSelectedImage] = useState<ImagePickerAsset | null>(
+    null
+  );
 
   const qrCodeImage = require("../../assets/images/react-logo.png"); // Replace with your actual QR image
 
@@ -28,16 +43,43 @@ export default function PaymentInformation() {
   const copyToClipboard = (text: any) => {
     Clipboard.setString(text);
   };
- const handleVerify = () => {
+  const handleVerify = () => {
     if (!transactionId.trim()) {
-      Alert.alert("Missing Transaction ID", "Please enter your Transaction ID.");
+      Toast.show({
+        type: "error",
+        text1: "Missing Transaction ID",
+        text2: "Please enter your Transaction ID.",
+        position: "top",
+      });
+
+      return;
+    }
+    if (!selectedImage) {
+      Toast.show({
+        type: "error",
+        text1: "Missing Screenshot",
+        text2: "Please upload a payment screenshot.",
+        position: "top",
+      });
       return;
     }
     setModalVisible(false);
     router.push("/(main)/Home");
   };
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setSelectedImage(result.assets[0]);
+    }
+  };
+
   return (
-    <View style={{backgroundColor:'#fff'}}>
+    <View>
       <View style={styles.headerContainer}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" color="#000" size={24} />
@@ -46,6 +88,13 @@ export default function PaymentInformation() {
       </View>
 
       <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.selectedPackageBox}>
+          <Text style={styles.packageHeading}>🎉 Great Choice!</Text>
+          <Text style={styles.packageSubtext}>
+            You’ve selected the{" "}
+            <Text style={styles.packageLabel}> {label} </Text> plan.
+          </Text>
+        </View>
         <Text style={styles.pageTitle}>Payment Information</Text>
         <Text style={styles.pageSub}>
           Choose any method below to complete your payment.
@@ -58,8 +107,10 @@ export default function PaymentInformation() {
             style={styles.cardHeader}
           >
             <View style={styles.cardHeaderLeft}>
-              <Image
-                source={require("../../assets/images/react-logo.png")}
+              <Ionicons
+                name="qr-code"
+                size={28}
+                color="#000"
                 style={styles.icon}
               />
               <View>
@@ -92,10 +143,13 @@ export default function PaymentInformation() {
             style={styles.cardHeader}
           >
             <View style={styles.cardHeaderLeft}>
-              <Image
-                source={require("../../assets/images/react-logo.png")}
+              <MaterialIcons
+                name="sensor-occupied"
+                size={24}
+                color="black"
                 style={styles.icon}
               />
+
               <View>
                 <Text style={styles.methodTitle}>UPI payment</Text>
                 <Text style={styles.methodSub}>Quick Payment via UPI</Text>
@@ -131,10 +185,13 @@ export default function PaymentInformation() {
             style={styles.cardHeader}
           >
             <View style={styles.cardHeaderLeft}>
-              <Image
-                source={require("../../assets/images/react-logo.png")}
+              <FontAwesome
+                name="bank"
+                size={24}
+                color="black"
                 style={styles.icon}
               />
+
               <View>
                 <Text style={styles.methodTitle}>Bank Transfer</Text>
                 <Text style={styles.methodSub}>
@@ -171,7 +228,10 @@ export default function PaymentInformation() {
         </View>
 
         {/* Verify Button */}
-        <TouchableOpacity style={styles.verifyButton} onPress={() => setModalVisible(true)}>
+        <TouchableOpacity
+          style={styles.verifyButton2}
+          onPress={() => setModalVisible(true)}
+        >
           <Text style={styles.verifyButtonText}>Verify Payment</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -192,7 +252,23 @@ export default function PaymentInformation() {
               placeholder="Enter Transaction ID"
               style={styles.textInput}
             />
-            <TouchableOpacity style={styles.verifyButton} onPress={handleVerify}>
+            <TouchableOpacity style={styles.uploadButton} onPress={pickImage}>
+              <Text style={styles.uploadButtonText}>
+                Upload Payment Screenshot
+              </Text>
+            </TouchableOpacity>
+
+            {selectedImage && (
+              <Image
+                source={{ uri: selectedImage.uri }}
+                style={styles.previewImage}
+                resizeMode="contain"
+              />
+            )}
+            <TouchableOpacity
+              style={styles.verifyButton}
+              onPress={handleVerify}
+            >
               <Text style={styles.verifyButtonText}>Verify Payment</Text>
             </TouchableOpacity>
           </View>
@@ -204,10 +280,55 @@ export default function PaymentInformation() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    backgroundColor: "#fff",
+    paddingHorizontal: 20,
+    paddingTop: 10,
   },
-   modalOverlay: {
+  uploadButton: {
+    backgroundColor: "#0284C7",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 6,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  uploadButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  previewImage: {
+    width: "100%",
+    height: 200,
+    marginTop: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+
+  selectedPackageBox: {
+    backgroundColor: "#E0F2FE",
+    padding: 16,
+    borderRadius: 10,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#7DD3FC",
+  },
+  packageHeading: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0284C7",
+    marginBottom: 4,
+  },
+  packageSubtext: {
+    fontSize: 15,
+    color: "#0369A1",
+  },
+  packageLabel: {
+    fontWeight: "700",
+    color: "#0C4A6E",
+  },
+
+  modalOverlay: {
     flex: 1,
     justifyContent: "flex-end",
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -279,7 +400,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom:10
+    marginBottom: 10,
   },
   cardHeaderLeft: {
     flexDirection: "row",
@@ -289,7 +410,8 @@ const styles = StyleSheet.create({
   icon: {
     width: 40,
     height: 40,
-    marginRight: 12,
+    marginRight:2,
+    marginTop: 10,
   },
   methodTitle: {
     fontSize: 16,
@@ -330,11 +452,20 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   verifyButton: {
-   backgroundColor: "#002B5B",
+    backgroundColor: "#002B5B",
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",
     marginTop: 24,
+    marginBottom: 20,
+  },
+  verifyButton2: {
+    backgroundColor: "#002B5B",
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 24,
+    marginBottom: 200,
   },
   verifyButtonText: {
     color: "#fff",

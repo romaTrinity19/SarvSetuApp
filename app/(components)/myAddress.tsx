@@ -8,6 +8,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 type Address = {
   firstName: string;
   lastName: string;
@@ -105,6 +106,7 @@ export default function MyAddressPage() {
   );
 
   return (
+     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}> 
     <View style={styles.container}>
       <View
         style={{
@@ -132,6 +134,7 @@ export default function MyAddressPage() {
         keyExtractor={(_, index) => index.toString()}
       />
     </View>
+    </SafeAreaView>
   );
 }
 

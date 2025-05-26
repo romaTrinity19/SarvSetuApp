@@ -1,11 +1,14 @@
 import Feather from "@expo/vector-icons/Feather";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Picker } from "@react-native-picker/picker";
+import axios from "axios";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -16,63 +19,52 @@ import CountryPicker, {
   Country,
   CountryCode,
 } from "react-native-country-picker-modal";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
+
+type State = {
+  id: string;
+  state_name: string;
+  state_code: string;
+};
 
 const SignUpScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [countryCode, setCountryCode] = useState<CountryCode>("IN");
   const [country, setCountry] = useState<Country | null>(null);
-  //const [selectedState, setSelectedState] = useState(null);
-  const indianStates = [
-    "Andhra Pradesh",
-    "Arunachal Pradesh",
-    "Assam",
-    "Bihar",
-    "Chhattisgarh",
-    "Goa",
-    "Gujarat",
-    "Haryana",
-    "Himachal Pradesh",
-    "Jharkhand",
-    "Karnataka",
-    "Kerala",
-    "Madhya Pradesh",
-    "Maharashtra",
-    "Manipur",
-    "Meghalaya",
-    "Mizoram",
-    "Nagaland",
-    "Odisha",
-    "Punjab",
-    "Rajasthan",
-    "Sikkim",
-    "Tamil Nadu",
-    "Telangana",
-    "Tripura",
-    "Uttar Pradesh",
-    "Uttarakhand",
-    "West Bengal",
-    "Andaman and Nicobar Islands",
-    "Chandigarh",
-    "Dadra and Nagar Haveli and Daman and Diu",
-    "Delhi",
-    "Jammu and Kashmir",
-    "Ladakh",
-    "Lakshadweep",
-    "Puducherry",
-  ];
-  // ✅ Form fields
+  // Form fields
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [selectedState, setSelectedState] = useState("");
   const [role, setRole] = useState("");
   const [referral, setReferral] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [states, setStates] = useState<State[]>([]);
+  const [selectedState, setSelectedState] = useState("");
 
-  const handleSignUp = () => {
+  useEffect(() => {
+    const fetchStates = async () => {
+      try {
+        const response = await axios.get(
+          "https://sarvsetu.trinitycrm.in/admin/Api/registration_api.php?type=state"
+        );
+
+        if (response.data && Array.isArray(response.data.data)) {
+          setStates(response.data.data);
+        } else {
+          console.error("Invalid states response", response.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch states:", error);
+      }
+    };
+    fetchStates();
+  }, []);
+
+  const handleSignUp = async () => {
     if (
       !firstName ||
       !lastName ||
@@ -83,192 +75,257 @@ const SignUpScreen = () => {
       !password ||
       !confirmPassword
     ) {
-      Alert.alert("Missing Fields", "Please fill out all required fields.");
+      Toast.show({
+        type: "success",
+        text1: "Missing Fields",
+        text2: "Please fill out all required fields.",
+        position: "top",
+      });
+
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert("Password Mismatch", "Passwords do not match.");
+      Toast.show({
+        type: "success",
+        text1: "Password Mismatch",
+        text2: "Passwords do not match.",
+        position: "top",
+      });
+
       return;
     }
 
-    // ✅ Prepare form data
-    const formData = {
-      firstName,
-      lastName,
-      email,
-      phone: `+${country?.callingCode?.[0] || "91"}${phone}`,
-      state: selectedState,
-      role,
-      referral,
-      password,
-    };
+    try {
+      const response = await axios.post(
+        "https://sarvsetu.trinitycrm.in/admin/Api/registration_api.php",
+        {
+          first_name: firstName,
+          last_name: lastName,
+          email: email,
+          contact_no: phone,
+          state_id: selectedState,
+          password: password,
+          role: role,
+          type: "registration",
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-    // ✅ Navigate with data
-    router.push({
-      pathname: "/(auth)/otp",
-      params: formData,
-    });
+      const data = response.data;
+      console.log("response registerddfdg OTP", data);
+
+      if (data.status === "success") {
+        await AsyncStorage.setItem("isRegistered", "true");
+        console.log("Response reg idddddddddddd:", data.data.reg_id);
+
+        router.push({
+          pathname: "/(auth)/otp",
+          params: {
+            email: email,
+            otp: data.otp,
+            role: role,
+            regId: data.data.reg_id,
+            phone: phone,
+            firstName: firstName,
+            lastName: lastName,
+            password: password,
+          },
+        });
+      } else {
+        Alert.alert("Error", data.message || "Something went wrong.");
+      }
+    } catch (error: any) {
+      if (error.response) {
+        console.error("API Error - Response Data:", error.response.data);
+        console.error("API Error - Status Code:", error.response.status);
+        console.error("API Error - Headers:", error.response.headers);
+      } else if (error.request) {
+        console.error(" API Error - No response received:", error.request);
+      } else {
+        console.error("API Error - Error Message:", error.message);
+      }
+      Toast.show({
+        type: "error",
+        text1: "Registration Failed",
+        text2:
+          error.response?.data?.message ||
+          "Something went wrong. Please try again.",
+        position: "top",
+      });
+    }
   };
+
   return (
-   <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Create an Account</Text>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Text style={styles.subText}>Already have an account?</Text>
-          <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
-            <Text style={styles.link2}>Log In</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.form}>
-        {/* First and Last Name */}
-        <View style={styles.row}>
-          <TextInput
-            placeholder="First Name"
-            value={firstName}
-            onChangeText={setFirstName}
-            style={[styles.input, { flex: 1, marginRight: 8 }]}
-          />
-          <TextInput
-            placeholder="Last Name"
-            value={lastName}
-            onChangeText={setLastName}
-            style={[styles.input, { flex: 1 }]}
-          />
-        </View>
-
-        {/* Email */}
-        <TextInput
-          placeholder="Email Address"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          style={styles.input}
-        />
-
-        {/* Country Code + Phone */}
-        <View style={styles.phoneRow}>
-          <View style={styles.flagBox}>
-            <CountryPicker
-              countryCode={countryCode}
-              withFilter
-              withFlag
-              withCallingCode
-              withEmoji
-              onSelect={(country: Country) => {
-                setCountryCode(country.cca2);
-                setCountry(country);
-              }}
-            />
-            <Text style={styles.phoneCode}>
-              +{country?.callingCode?.[0] || "91"}
-            </Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Create an Account</Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Text style={styles.subText}>Already have an account?</Text>
+            <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
+              <Text style={styles.link2}>Log In</Text>
+            </TouchableOpacity>
           </View>
-          <TextInput
-            placeholder="Phone Number"
-            value={phone}
-            onChangeText={setPhone}
-            style={[styles.input, { flex: 1, marginLeft: 8, marginTop: 10 }]}
-            keyboardType="numeric"
-          />
         </View>
 
-        {/* State Picker */}
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={selectedState}
-            onValueChange={(itemValue) => setSelectedState(itemValue)}
-          >
-            <Picker.Item label="--Select State--" value="" />
-            {indianStates.map((st, idx) => (
-              <Picker.Item key={idx} label={st} value={st} />
-            ))}
-          </Picker>
-        </View>
-
-        {/* Role Picker */}
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={role}
-            onValueChange={(itemValue) => setRole(itemValue)}
-          >
-            <Picker.Item label="--Select Role--" value="" />
-            <Picker.Item label="User" value="user" />
-            <Picker.Item label="Vendor" value="vendor" />
-          </Picker>
-        </View>
-
-        {/* Referral */}
-        <TextInput
-          placeholder="Referral Code"
-          value={referral}
-          onChangeText={setReferral}
-          style={styles.input}
-        />
-
-        {/* Password */}
-        <View style={styles.passwordBox}>
-          <TextInput
-            placeholder="Set Password"
-            value={password}
-            onChangeText={setPassword}
-            style={[styles.input, { flex: 1 }]}
-            secureTextEntry={!showPassword}
-          />
-          <TouchableOpacity
-            onPress={() => setShowPassword(!showPassword)}
-            style={styles.eyeIcon}
-          >
-            <Feather
-              name={showPassword ? "eye-off" : "eye"}
-              size={20}
-              color="#999"
+        <View style={styles.form}>
+          {/* First and Last Name */}
+          <View style={styles.row}>
+            <TextInput
+              placeholder="First Name"
+              value={firstName}
+              onChangeText={setFirstName}
+              style={[styles.input, { flex: 1, marginRight: 8 }]}
             />
-          </TouchableOpacity>
-        </View>
-
-        {/* Confirm Password */}
-        <View style={styles.passwordBox}>
-          <TextInput
-            placeholder="Confirm Password"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            style={[styles.input, { flex: 1 }]}
-            secureTextEntry={!showConfirm}
-          />
-          <TouchableOpacity
-            onPress={() => setShowConfirm(!showConfirm)}
-            style={styles.eyeIcon}
-          >
-            <Feather
-              name={showConfirm ? "eye-off" : "eye"}
-              size={20}
-              color="#999"
+            <TextInput
+              placeholder="Last Name"
+              value={lastName}
+              onChangeText={setLastName}
+              style={[styles.input, { flex: 1 }]}
             />
+          </View>
+
+          {/* Email */}
+          <TextInput
+            placeholder="Email Address"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            style={styles.input}
+          />
+
+          {/* Country Code + Phone */}
+          <View style={styles.phoneRow}>
+            <View style={styles.flagBox}>
+              <CountryPicker
+                countryCode={countryCode}
+                withFilter
+                withFlag
+                withCallingCode
+                withEmoji
+                onSelect={(country: Country) => {
+                  setCountryCode(country.cca2);
+                  setCountry(country);
+                }}
+              />
+              <Text style={styles.phoneCode}>
+                +{country?.callingCode?.[0] || "91"}
+              </Text>
+            </View>
+            <TextInput
+              placeholder="Phone Number"
+              value={phone}
+              onChangeText={setPhone}
+              style={[styles.input, { flex: 1, marginLeft: 8, marginTop: 10 }]}
+              keyboardType="numeric"
+            />
+          </View>
+
+          {/* State Picker */}
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={selectedState}
+              onValueChange={(itemValue) => setSelectedState(itemValue)}
+            >
+              <Picker.Item label="--Select State--" value="" />
+              {states.map((st) => (
+                <Picker.Item
+                  key={st.id}
+                  label={st?.state_name}
+                  value={st?.id}
+                />
+              ))}
+            </Picker>
+          </View>
+
+          {/* Role Picker */}
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={role}
+              onValueChange={(itemValue) => setRole(itemValue)}
+            >
+              <Picker.Item label="--Select Role--" value="" />
+              <Picker.Item label="User" value="user" />
+              <Picker.Item label="Vendor" value="vendor" />
+            </Picker>
+          </View>
+
+          {/* Referral */}
+          <TextInput
+            placeholder="Referral Code"
+            value={referral}
+            onChangeText={setReferral}
+            style={styles.input}
+          />
+
+          {/* Password */}
+          <View style={styles.passwordBox}>
+            <TextInput
+              placeholder="Set Password"
+              value={password}
+              onChangeText={setPassword}
+              style={[styles.input, { flex: 1 }]}
+              secureTextEntry={!showPassword}
+            />
+            <TouchableOpacity
+              onPress={() => setShowPassword(!showPassword)}
+              style={styles.eyeIcon}
+            >
+              <Feather
+                name={showPassword ? "eye-off" : "eye"}
+                size={20}
+                color="#999"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Confirm Password */}
+          <View style={styles.passwordBox}>
+            <TextInput
+              placeholder="Confirm Password"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              style={[styles.input, { flex: 1 }]}
+              secureTextEntry={!showConfirm}
+            />
+            <TouchableOpacity
+              onPress={() => setShowConfirm(!showConfirm)}
+              style={styles.eyeIcon}
+            >
+              <Feather
+                name={showConfirm ? "eye-off" : "eye"}
+                size={20}
+                color="#999"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Submit Button */}
+          <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
+            <Text style={styles.signUpText}>Sign Up</Text>
           </TouchableOpacity>
+
+          <Text style={styles.footerText}>
+            By signing up, agree to the{" "}
+            <Text style={styles.link}>Terms Of Use</Text> and{" "}
+            <Text style={styles.link}>Data Deletion Policy</Text>
+          </Text>
         </View>
-
-        {/* Submit Button */}
-        <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
-          <Text style={styles.signUpText}>Sign Up</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.footerText}>
-          By signing up, agree to the{" "}
-          <Text style={styles.link}>Terms Of Use</Text> and{" "}
-          <Text style={styles.link}>Data Deletion Policy</Text>
-        </Text>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     paddingBottom: 15,
-    
+
     backgroundColor: "#fff",
   },
   header: {
@@ -276,7 +333,7 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "ios" ? 60 : 40,
     paddingBottom: 30,
     paddingHorizontal: 20,
-    marginTop: 30,
+    //marginTop: 30,
   },
   headerTitle: {
     fontSize: 28,

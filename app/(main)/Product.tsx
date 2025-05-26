@@ -1,17 +1,21 @@
 import Entypo from "@expo/vector-icons/Entypo";
 import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { router } from "expo-router";
-import React, { useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router, useFocusEffect } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   FlatList,
   Image,
+  Linking,
   Modal,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const productsData = [
   {
@@ -20,6 +24,13 @@ const productsData = [
     price: 449,
     originalPrice: 599,
     image: require("../../assets/images/headphone.webp"),
+    images: [
+      require("../../assets/images/headphone.webp"),
+      require("../../assets/images/headphone.webp"),
+    ],
+    phoneNumber: "9123456789",
+    website: "https://example.com/screwdriver",
+    whatsappNumber: "7999559862",
   },
   {
     id: "2",
@@ -27,6 +38,13 @@ const productsData = [
     price: 399,
     originalPrice: 699,
     image: require("../../assets/images/image.jpeg"),
+    images: [
+      require("../../assets/images/headphone.webp"),
+      require("../../assets/images/headphone.webp"),
+    ],
+    phoneNumber: "9876543210",
+    website: "https://www.google.com/",
+    whatsappNumber: "9131732564",
   },
   {
     id: "3",
@@ -34,6 +52,13 @@ const productsData = [
     price: 499,
     originalPrice: 799,
     image: require("../../assets/images/adbisImage.webp"),
+    images: [
+      require("../../assets/images/headphone.webp"),
+      require("../../assets/images/headphone.webp"),
+    ],
+    phoneNumber: "9988776655",
+    website: "https://example.com/hairremover",
+    whatsappNumber: "9988776655",
   },
   {
     id: "4",
@@ -41,6 +66,13 @@ const productsData = [
     price: 599,
     originalPrice: 799,
     image: require("../../assets/images/headphone.webp"),
+    images: [
+      require("../../assets/images/headphone.webp"),
+      require("../../assets/images/headphone.webp"),
+    ],
+    phoneNumber: "9090909090",
+    website: "https://example.com/neckfan",
+    whatsappNumber: "9090909090",
   },
   {
     id: "5",
@@ -48,27 +80,9 @@ const productsData = [
     price: 649,
     originalPrice: 999,
     image: require("../../assets/images/image.jpeg"),
-  },
-  {
-    id: "6",
-    name: "boAt ENx Airdopes Mango Pods",
-    price: 649,
-    originalPrice: 999,
-    image: require("../../assets/images/headphone.webp"),
-  },
-  {
-    id: "7",
-    name: "boAt Airdopes Mango ENx Pods Bronze",
-    price: 649,
-    originalPrice: 999,
-    image: require("../../assets/images/react-logo.png"),
-  },
-  {
-    id: "8",
-    name: "boAt Yo Yo Pods Airdopes White",
-    price: 649,
-    originalPrice: 1099,
-    image: require("../../assets/images/react-logo.png"),
+    phoneNumber: "7777777777",
+    website: "https://example.com/mango-enx",
+    whatsappNumber: "7777777777",
   },
 ];
 
@@ -76,8 +90,43 @@ export default function ProductListScreen() {
   const [products, setProducts] = useState(productsData);
   const [filterVisible, setFilterVisible] = useState(false);
   const [wishlist, setWishlist] = useState<string[]>([]);
+  const [userData, setUserData] = useState<any>(null);
+  const [selectedFilter, setSelectedFilter] = useState("recommended");
 
-  const applyFilter = (type: any) => {
+  
+  const toggleWishlist = (productId: any) => {
+    setWishlist((prev) =>
+      prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
+  const getUserData = async () => {
+    const userDataString = await AsyncStorage.getItem("userData");
+    if (userDataString) {
+      const userData = JSON.parse(userDataString);
+      console.log("Stored User Dataaaaaaa:", userData);
+      setUserData(userData);
+    }
+  };
+  useEffect(() => {
+    getUserData();
+  }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const loadShops = async () => {
+        const savedShops = await AsyncStorage.getItem("shops");
+        const parsed = savedShops ? JSON.parse(savedShops) : [];
+        console.log("shop detailssssssssssss", parsed);
+        setProducts([...parsed, ...productsData]);
+      };
+      loadShops();
+    }, [])
+  );
+
+   const applyFilter = (type: any) => {
     setFilterVisible(false);
     if (type === "lowest") {
       setProducts([...products].sort((a, b) => a.price - b.price));
@@ -88,26 +137,18 @@ export default function ProductListScreen() {
     }
   };
 
-  const [selectedFilter, setSelectedFilter] = useState("recommended");
-
   const handleFilterSelection = (filterType: any) => {
     setSelectedFilter(filterType);
     applyFilter(filterType);
     setFilterVisible(false);
   };
 
-  const toggleWishlist = (productId: any) => {
-    setWishlist((prev) =>
-      prev.includes(productId)
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId]
-    );
-  };
-
   return (
+     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}  edges={['top']}>
+       <StatusBar barStyle="dark-content" backgroundColor="#fff" />  
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerText}>Products</Text>
+        <Text style={styles.headerText}>Shop & Services</Text>
         <Feather name="shopping-bag" size={24} color="black" />
       </View>
       <View style={styles.horizontalLine} />
@@ -125,41 +166,53 @@ export default function ProductListScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.allProductsButton}
-            onPress={() => setProducts(productsData)}
+            onPress={() => setProducts(products)}
           >
-            <Text style={styles.allProductsText}>All Products</Text>
+            <Text style={styles.allProductsText}>All Shop & Services</Text>
           </TouchableOpacity>
-          {/* {role === "vendor" && ( */}
-  <TouchableOpacity
-    style={styles.allProductsButton}
-    // onPress={() => router.push("/(components)/AddProduct")}
-  >
-    <Text style={styles.allProductsText}>+ Add Product</Text>
-  </TouchableOpacity>
-{/* )} */}
+          {userData?.role === "vendor" && (
+            <TouchableOpacity
+              style={styles.allProductsButton}
+              onPress={() => router.push("/(components)/createShop")}
+            >
+              <Text style={styles.allProductsText}>+ Add Shop</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <FlatList
           data={products}
           keyExtractor={(item) => item.id}
-          numColumns={2}
+          numColumns={1}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContainer}
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.productCard}  onPress={() =>
-            router.push({
-              pathname: '/(components)/productDetails/[slug]',
-              params: {
-                slug: item.id,
-                name: item.name,
-                price: item.price,
-                originalPrice: item.originalPrice,
-                images:item.image,
-              },
-            })
-          }>
-              <View style={styles.imageContainer}>
-                <Image source={item.image} style={styles.productImage} />
+            <View style={styles.productCard}>
+              <TouchableOpacity
+                style={styles.imageContainer}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(components)/productDetails/[slug]",
+                    params: {
+                      slug: item.id,
+                      name: item.name,
+                      price: item.price,
+                      originalPrice: item.originalPrice,
+                      images: item.image,
+                      otherImages: item?.images,
+                      phoneNumber: item.phoneNumber,
+                      whatsappNumber: item.whatsappNumber,
+                      website: item.website,
+                    },
+                  })
+                }
+              >
+                <Image
+                  source={item.image}
+                  style={styles.productImage}
+                  resizeMode="cover"
+                />
+
                 <TouchableOpacity
                   style={styles.heartIcon}
                   onPress={() => toggleWishlist(item.id)}
@@ -172,7 +225,8 @@ export default function ProductListScreen() {
                     color={wishlist.includes(item.id) ? "red" : "gray"}
                   />
                 </TouchableOpacity>
-              </View>
+              </TouchableOpacity>
+
               <Text style={styles.productName}>{item.name}</Text>
               <Text style={styles.productPrice}>
                 ₹ {item.price.toFixed(2)}{" "}
@@ -180,7 +234,32 @@ export default function ProductListScreen() {
                   ₹ {item.originalPrice.toFixed(2)}
                 </Text>
               </Text>
-            </TouchableOpacity>
+
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={() => Linking.openURL(`tel:${item.phoneNumber}`)}
+                >
+                  <Text style={styles.buttonText}>Call</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={() => Linking.openURL(item.website)}
+                >
+                  <Text style={styles.buttonText}>Visit Now</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={() =>
+                    Linking.openURL(`https://wa.me/${item.whatsappNumber}`)
+                  }
+                >
+                  <Text style={styles.buttonText}>Contact Us</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           )}
         />
       </View>
@@ -227,19 +306,23 @@ export default function ProductListScreen() {
         </View>
       </Modal>
     </View>
+    </SafeAreaView> 
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 30,
+    paddingTop: 20,
     backgroundColor: "#fff",
     paddingBottom: 140,
   },
   imageContainer: {
-    position: "relative",
+    borderRadius: 10,
+    overflow: "hidden",
+    backgroundColor: "#fff",
   },
+
   heartIcon: {
     position: "absolute",
     bottom: 5,
@@ -269,13 +352,14 @@ const styles = StyleSheet.create({
   },
   allProductsText: { color: "#fff", fontWeight: "bold" },
   listContainer: { paddingBottom: 20 },
-  productCard: { flex: .5, margin: 5, borderRadius: 10, padding: 10 },
+  productCard: { flex: 1, margin: 5, borderRadius: 10, padding: 10 },
   productImage: {
     width: "100%",
-    height: 100,
-    resizeMode: "contain",
-    marginBottom: 5,
+    height: 200,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
   },
+
   productName: { fontSize: 13, marginBottom: 5 },
   productPrice: { fontWeight: "bold", fontSize: 16 },
   strike: { textDecorationLine: "line-through", color: "gray", fontSize: 12 },
@@ -313,5 +397,25 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 15,
     top: 15,
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  actionButton: {
+    flex: 1,
+    backgroundColor: "#E0F2FE",
+    paddingVertical: 8,
+    marginHorizontal: 4,
+    borderRadius: 20,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#7DD3FC",
+  },
+  buttonText: {
+    color: "#002B5B",
+    fontSize: 13,
+    fontWeight: "bold",
   },
 });
