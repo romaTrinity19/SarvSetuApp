@@ -196,21 +196,28 @@ const [isSubscribe , setIsSubscribe] = useState(false);
 };
 
 const Header = () => {
-  const [userData, setUserData] = useState<any>(null);
-  const name = userData?.firstName;
-  console.log("nameww", name);
-  const initial = name?.charAt(0).toUpperCase();
-  const getUserData = async () => {
-    const userDataString = await AsyncStorage.getItem("userData");
-    if (userDataString) {
-      const userData = JSON.parse(userDataString);
-      console.log("Stored User Data:", userData);
-      setUserData(userData);
-    }
-  };
+   const [userData, setUserData] = useState<any>(null);
+
   useEffect(() => {
-    getUserData();
+    const loadUserData = async () => {
+      try {
+        const storedData = await AsyncStorage.getItem("userData");
+        if (storedData) {
+          const user = JSON.parse(storedData);
+          setUserData(user);
+         // console.log('user',user)
+        }
+      } catch (error) {
+        console.error("Failed to load user data:", error);
+      }
+    };
+
+    loadUserData();
   }, []);
+
+  const firstName = userData?.first_name || "";
+  const lastName = userData?.last_name || "";
+  const initial = firstName?.charAt(0)?.toUpperCase() || "?";
   return (
     <View style={styles.headerContainer}>
       <View style={styles.initialCircle}>
@@ -218,7 +225,7 @@ const Header = () => {
       </View>
       <View style={styles.headerTextContainer}>
         <Text style={styles.profileName}>
-          {name} {userData?.lastName}
+           {firstName.toUpperCase()} {" "+lastName.toUpperCase()} 
         </Text>
       </View>
     </View>
@@ -239,7 +246,7 @@ const App = () => {
         "https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=dashboard"
       );
       const json = await response.json();
-      console.log("dashboard data:", JSON.stringify(json, null, 2));
+     // console.log("dashboard data:", JSON.stringify(json, null, 2));
 
       if (json.status === "success" && json.message?.add_data) {
         setAds(json.message.add_data);
@@ -253,7 +260,7 @@ const App = () => {
     }
   };
 
-  console.log("dashboard dataaaa", ads);
+ // console.log("dashboard dataaaa", ads);
 
   if (loading) {
     return <ActivityIndicator size="large" />;

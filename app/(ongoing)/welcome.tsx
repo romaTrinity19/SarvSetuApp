@@ -7,19 +7,26 @@ const WelcomeScreen: React.FC = () => {
   const router = useRouter();
 
   useEffect(() => {
-    const checkRegistration = async () => {
-      const isRegistered = await AsyncStorage.getItem('isRegistered');
+    const checkUserData = async () => {
+      try {
+        const userData = await AsyncStorage.getItem('userData');
 
-      setTimeout(() => {
-        // if (isRegistered === 'true') {
-          //router.replace('/(main)/Home'); // ✅ Registered users go to Home
-        // } else {
-          router.replace('/(auth)/register');  
-        // }
-      }, 5000); // 5 seconds delay
+        setTimeout(() => {
+          if (userData) {
+            // If user is logged in, go to Home screen
+            router.replace('/(main)/Home');
+          } else {
+            // If not logged in, go to Register screen
+            router.replace('/(auth)/register');
+          }
+        }, 3000); // You can reduce or increase the splash screen time
+      } catch (error) {
+        console.error("Failed to check user data:", error);
+        router.replace('/(auth)/register'); // Fallback to register
+      }
     };
 
-    checkRegistration();
+    checkUserData();
   }, []);
 
   return (

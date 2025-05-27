@@ -15,6 +15,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  KeyboardAvoidingView,
 } from "react-native";
 import CountryPicker, {
   Country,
@@ -80,18 +81,17 @@ const SignUpScreen = () => {
       !confirmPassword
     ) {
       Toast.show({
-        type: "success",
+        type: "error",
         text1: "Missing Fields",
         text2: "Please fill out all required fields.",
         position: "top",
       });
-
+      setLoading(false);
       return;
     }
-
     if (password !== confirmPassword) {
       Toast.show({
-        type: "success",
+        type: "error",
         text1: "Password Mismatch",
         text2: "Passwords do not match.",
         position: "top",
@@ -120,10 +120,10 @@ const SignUpScreen = () => {
       );
 
       const data = response.data;
-      console.log("response registerddfdg OTP", data);
+     // console.log("response registerddfdg OTP", data);
 
       if (data.status === "success") {
-        console.log("Response reg idddddddddddd:", data.data.reg_id);
+      //  console.log("Response reg idddddddddddd:", data.data.reg_id);
 
         router.push({
           pathname: "/(auth)/otp",
@@ -136,10 +136,12 @@ const SignUpScreen = () => {
             firstName: firstName,
             lastName: lastName,
             password: password,
+            selectedState,
           },
         });
       } else {
         Alert.alert("Error", data.message || "Something went wrong.");
+        setLoading(false);
       }
     } catch (error: any) {
       if (error.response) {
@@ -160,176 +162,203 @@ const SignUpScreen = () => {
         position: "top",
       });
     } finally {
-    setLoading(false); // Reset loading regardless of outcome
-  }
+      setLoading(false); // Reset loading regardless of outcome
+    }
   };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Create an Account</Text>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text style={styles.subText}>Already have an account?</Text>
-            <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
-              <Text style={styles.link2}>Log In</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.form}>
-          {/* First and Last Name */}
-          <View style={styles.row}>
-            <TextInput
-              placeholder="First Name"
-              value={firstName}
-              onChangeText={setFirstName}
-              style={[styles.input, { flex: 1, marginRight: 8 }]}
-            />
-            <TextInput
-              placeholder="Last Name"
-              value={lastName}
-              onChangeText={setLastName}
-              style={[styles.input, { flex: 1 }]}
-            />
-          </View>
-
-          {/* Email */}
-          <TextInput
-            placeholder="Email Address"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            style={styles.input}
-          />
-
-          {/* Country Code + Phone */}
-          <View style={styles.phoneRow}>
-            <View style={styles.flagBox}>
-              <CountryPicker
-                countryCode={countryCode}
-                withFilter
-                withFlag
-                withCallingCode
-                withEmoji
-                onSelect={(country: Country) => {
-                  setCountryCode(country.cca2);
-                  setCountry(country);
-                }}
-              />
-              <Text style={styles.phoneCode}>
-                +{country?.callingCode?.[0] || "91"}
-              </Text>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0} // adjust as needed
+      >
+        <ScrollView contentContainerStyle={styles.container}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Create an Account</Text>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Text style={styles.subText}>Already have an account?</Text>
+              <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
+                <Text style={styles.link2}>Log In</Text>
+              </TouchableOpacity>
             </View>
-            <TextInput
-              placeholder="Phone Number"
-              value={phone}
-              onChangeText={setPhone}
-              style={[styles.input, { flex: 1, marginLeft: 8, marginTop: 10 }]}
-              keyboardType="numeric"
-            />
           </View>
 
-          {/* State Picker */}
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={selectedState}
-              onValueChange={(itemValue) => setSelectedState(itemValue)}
-            >
-              <Picker.Item label="--Select State--" value="" />
-              {states.map((st) => (
-                <Picker.Item
-                  key={st.id}
-                  label={st?.state_name}
-                  value={st?.id}
+          <View style={styles.form}>
+            {/* First and Last Name */}
+            <View style={styles.row}>
+              <TextInput
+                placeholder="First Name"
+                value={firstName}
+                onChangeText={setFirstName}
+                style={[styles.input, { flex: 1, marginRight: 8 }]}
+              />
+              <TextInput
+                placeholder="Last Name"
+                value={lastName}
+                onChangeText={setLastName}
+                style={[styles.input, { flex: 1 }]}
+              />
+            </View>
+
+            {/* Email */}
+            <TextInput
+              placeholder="Email Address"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              style={styles.input}
+            />
+
+            {/* Country Code + Phone */}
+            <View style={styles.phoneRow}>
+              <View style={styles.flagBox}>
+                <CountryPicker
+                  countryCode={countryCode}
+                  withFilter
+                  withFlag
+                  withCallingCode
+                  withEmoji
+                  onSelect={(country: Country) => {
+                    setCountryCode(country.cca2);
+                    setCountry(country);
+                  }}
                 />
-              ))}
-            </Picker>
-          </View>
-
-          {/* Role Picker */}
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={role}
-              onValueChange={(itemValue) => setRole(itemValue)}
-            >
-              <Picker.Item label="--Select Role--" value="" />
-              <Picker.Item label="User" value="user" />
-              <Picker.Item label="Vendor" value="vendor" />
-            </Picker>
-          </View>
-
-          {/* Referral */}
-          <TextInput
-            placeholder="Referral Code"
-            value={referral}
-            onChangeText={setReferral}
-            style={styles.input}
-          />
-
-          {/* Password */}
-          <View style={styles.passwordBox}>
-            <TextInput
-              placeholder="Set Password"
-              value={password}
-              onChangeText={setPassword}
-              style={[styles.input, { flex: 1 }]}
-              secureTextEntry={!showPassword}
-            />
-            <TouchableOpacity
-              onPress={() => setShowPassword(!showPassword)}
-              style={styles.eyeIcon}
-            >
-              <Feather
-                name={showPassword ? "eye-off" : "eye"}
-                size={20}
-                color="#999"
+                <Text style={styles.phoneCode}>
+                  +{country?.callingCode?.[0] || "91"}
+                </Text>
+              </View>
+              <TextInput
+                placeholder="Phone Number"
+                value={phone}
+                onChangeText={setPhone}
+                style={[
+                  styles.input,
+                  { flex: 1, marginLeft: 8, marginTop: 10 },
+                ]}
+                keyboardType="numeric"
               />
-            </TouchableOpacity>
-          </View>
+            </View>
 
-          {/* Confirm Password */}
-          <View style={styles.passwordBox}>
+            {/* State Picker */}
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={selectedState}
+                onValueChange={(itemValue) => setSelectedState(itemValue)}
+              >
+                <Picker.Item label="--Select State--" value="" />
+                {states.map((st) => (
+                  <Picker.Item
+                    key={st.id}
+                    label={st?.state_name}
+                    value={st?.id}
+                  />
+                ))}
+              </Picker>
+            </View>
+
+            {/* Role Picker */}
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={role}
+                onValueChange={(itemValue) => setRole(itemValue)}
+              >
+                <Picker.Item label="--Select Role--" value="" />
+                <Picker.Item label="User" value="user" />
+                <Picker.Item label="Vendor" value="vendor" />
+              </Picker>
+            </View>
+
+            {/* Referral */}
             <TextInput
-              placeholder="Confirm Password"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              style={[styles.input, { flex: 1 }]}
-              secureTextEntry={!showConfirm}
+              placeholder="Referral Code"
+              value={referral}
+              onChangeText={setReferral}
+              style={styles.input}
             />
-            <TouchableOpacity
-              onPress={() => setShowConfirm(!showConfirm)}
-              style={styles.eyeIcon}
-            >
-              <Feather
-                name={showConfirm ? "eye-off" : "eye"}
-                size={20}
-                color="#999"
+
+            {/* Password */}
+            <View style={styles.passwordBox}>
+              <TextInput
+                placeholder="Set Password"
+                value={password}
+                onChangeText={setPassword}
+                style={[styles.input, { flex: 1 }]}
+                secureTextEntry={!showPassword}
               />
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.eyeIcon}
+              >
+                <Feather
+                  name={showPassword ? "eye-off" : "eye"}
+                  size={20}
+                  color="#999"
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Confirm Password */}
+            <View style={styles.passwordBox}>
+              <TextInput
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                style={[styles.input, { flex: 1 }]}
+                secureTextEntry={!showConfirm}
+              />
+              <TouchableOpacity
+                onPress={() => setShowConfirm(!showConfirm)}
+                style={styles.eyeIcon}
+              >
+                <Feather
+                  name={showConfirm ? "eye-off" : "eye"}
+                  size={20}
+                  color="#999"
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Submit Button */}
+            <TouchableOpacity
+              style={styles.signUpButton}
+              onPress={handleSignUp}
+            >
+              {loading ? (
+                <ActivityIndicator size="large" color="#fff" />
+              ) : (
+                <Text style={styles.signUpText}>Sign Up</Text>
+              )}
             </TouchableOpacity>
+
+            <Text style={styles.footerText}>
+              By signing up, agree to the{" "}
+              <Text
+                style={styles.link}
+                onPress={() => router.push("/(components)/termsOfUse")}
+              >
+                Terms Of Use
+              </Text>{" "}
+              and{" "}
+              <Text
+                style={styles.link}
+                onPress={() =>
+                  router.push("/(components)/dataDeletetionPolicy")
+                }
+              >
+                Data Deletion Policy
+              </Text>
+            </Text>
           </View>
-
-          {/* Submit Button */}
-          <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
-            {loading ? <ActivityIndicator size="large" color="#fff" />: <Text style={styles.signUpText}>Sign Up</Text> }
-          </TouchableOpacity>
-
-          <Text style={styles.footerText}>
-            By signing up, agree to the{" "}
-            <Text style={styles.link}    onPress={() => router.push("/(components)/termsOfUse")}>Terms Of Use</Text> and{" "}
-            <Text style={styles.link} onPress={() => router.push("/(components)/dataDeletetionPolicy")}>Data Deletion Policy</Text>
-          </Text>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 15,
-
     backgroundColor: "#fff",
   },
   header: {

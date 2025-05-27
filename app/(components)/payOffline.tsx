@@ -7,7 +7,7 @@ import {
   MaterialIcons,
 } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Clipboard,
@@ -29,13 +29,26 @@ export default function PaymentInformation() {
   const [selectedMethod, setSelectedMethod] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [transactionId, setTransactionId] = useState("");
-  const { label, value, amount } = useLocalSearchParams();
   const [selectedImage, setSelectedImage] = useState<ImagePickerAsset | null>(
     null
   );
+  const { packages } = useLocalSearchParams(); // This is a JSON string
+  const [selectedPackage, setSelectedPackage] = useState<any>(null);
+
+  useEffect(() => {
+    if (typeof packages === "string") {
+      try {
+        const parsedPackage = JSON.parse(packages);
+        setSelectedPackage(parsedPackage);
+        console.log("Parsed package:", parsedPackage);
+      } catch (error) {
+        console.error("Failed to parse package:", error);
+      }
+    }
+  }, [packages]);
 
   const qrCodeImage = require("../../assets/images/react-logo.png"); // Replace with your actual QR image
-
+  console.log("selected package", packages);
   const handleSelect = (method: any) => {
     setSelectedMethod(selectedMethod === method ? null : method);
   };
@@ -91,10 +104,22 @@ export default function PaymentInformation() {
         <View style={styles.selectedPackageBox}>
           <Text style={styles.packageHeading}>🎉 Great Choice!</Text>
           <Text style={styles.packageSubtext}>
-            You’ve selected the{" "}
-            <Text style={styles.packageLabel}> {label} </Text> plan.
+            You’ve chosen the{" "}
+            <Text style={styles.packageLabel}>
+              {selectedPackage?.in_month}-month
+            </Text>{" "}
+            <Text style={styles.packageLabel}>
+              {selectedPackage?.package_name} Id - {selectedPackage?.package_id}
+            </Text>{" "}
+            plan for just{" "}
+            <Text style={styles.packageLabel}>₹{selectedPackage?.amount}</Text>!
+          </Text>
+          <Text style={styles.packageSubtext}>
+            Unlock premium features and enjoy exclusive benefits throughout your
+            subscription period.
           </Text>
         </View>
+
         <Text style={styles.pageTitle}>Payment Information</Text>
         <Text style={styles.pageSub}>
           Choose any method below to complete your payment.
@@ -283,6 +308,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
   },
+  selectedPackageBox: {
+  backgroundColor: "#E0F2FE",
+  borderRadius: 12,
+  padding: 16,
+  marginVertical: 20,
+  borderLeftWidth: 5,
+  borderLeftColor: "#057496",
+   borderWidth: 1,
+   borderColor: "#057496",
+},
+packageHeading: {
+  fontSize: 18,
+  fontWeight: "bold",
+  color: "#057496",
+  marginBottom: 6,
+},
+packageSubtext: {
+  fontSize: 16,
+  color: "#0369A1",
+},
+packageLabel: {
+  fontWeight: "bold",
+  color: "#f36c21",
+},
+packageNote: {
+  marginTop: 10,
+  fontSize: 14,
+  color: "#666",
+},
+
   uploadButton: {
     backgroundColor: "#0284C7",
     paddingVertical: 10,
@@ -304,30 +359,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
   },
-
-  selectedPackageBox: {
-    backgroundColor: "#E0F2FE",
-    padding: 16,
-    borderRadius: 10,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "#7DD3FC",
-  },
-  packageHeading: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#0284C7",
-    marginBottom: 4,
-  },
-  packageSubtext: {
-    fontSize: 15,
-    color: "#0369A1",
-  },
-  packageLabel: {
-    fontWeight: "700",
-    color: "#0C4A6E",
-  },
-
   modalOverlay: {
     flex: 1,
     justifyContent: "flex-end",
@@ -364,6 +395,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "700",
     marginBottom: 4,
+    color:'#057496'
   },
   headerContainer: {
     flexDirection: "row",
@@ -388,7 +420,7 @@ const styles = StyleSheet.create({
   },
   pageSub: {
     fontSize: 14,
-    color: "#6b7280",
+    color: "#0369A1",
     marginBottom: 24,
   },
   paymentCard: {
@@ -410,7 +442,7 @@ const styles = StyleSheet.create({
   icon: {
     width: 40,
     height: 40,
-    marginRight:2,
+    marginRight: 2,
     marginTop: 10,
   },
   methodTitle: {

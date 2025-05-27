@@ -1,6 +1,6 @@
 // LifetimeMembershipScreen.tsx
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -13,41 +13,55 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
 import { SafeAreaView } from "react-native-safe-area-context";
+import axios from "axios";
 
-const packages = [
-  { label: "₹599 – 3 Months Prime", value: "3_months", amount: 599 },
-  { label: "₹999 – 6 Months Prime", value: "6_months", amount: 999 },
-  { label: "₹1499 – 12 Months Prime", value: "12_months", amount: 1499 },
-  { label: "₹2999 – Lifetime Prime", value: "lifetime", amount: 2999 },
-];
+interface Package {
+  package_id: string;
+  package_name: string;
+  in_month: string;
+  amount: string;
+}
 const LifetimeMembershipScreen = () => {
-  const [selectedPackage, setSelectedPackage] = useState<null | {
-    label: string;
-    value: string;
-    amount: number;
-  }>(null);
+  const [packages, setPackage] = useState<Package[]>([]);
 
-  const handleBuyNow = () => {
-    if (!selectedPackage) {
-      Toast.show({
-        type: "error",
-        text1: "Please select a membership package",
-        position: "top",
-      });
+  const [loading, setLoading] = useState<boolean>(true);
+  const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
 
-      return;
-    }
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        const response = await axios.get(
+          "https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=getpackage"
+        );
 
-    router.push({
-      pathname: "/(components)/payOffline",
-      params: {
-        label: selectedPackage.label,
-        value: selectedPackage.value,
-        amount: selectedPackage.amount.toString(), // pass as string in URL
-      },
-    });
-  };
+        const data = response.data;
 
+        if (
+          data.status === "success" &&
+          data.message &&
+          Array.isArray(data.message.package_data)
+        ) {
+          setPackage(data.message.package_data);
+        } else {
+          Toast.show({
+            type: "error",
+            text1: "Invalid package response",
+          });
+        }
+      } catch (error) {
+        Toast.show({
+          type: "error",
+          text1: "Error fetching packages",
+        });
+        console.error("Error fetching packages:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPackages();
+  }, []);
+  console.log("packagesss", packages);
   const handlePayOffline = () => {
     if (!selectedPackage) {
       Toast.show({
@@ -61,13 +75,11 @@ const LifetimeMembershipScreen = () => {
     router.push({
       pathname: "/(components)/payOffline",
       params: {
-        label: selectedPackage.label,
-        value: selectedPackage.value,
-        amount: selectedPackage.amount.toString(),
+        packages: JSON.stringify(selectedPackage),
       },
     });
   };
-
+  console.log("selected package", selectedPackage);
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       <LinearGradient colors={["#053159", "#057496"]} style={styles.container}>
@@ -101,14 +113,13 @@ const LifetimeMembershipScreen = () => {
 
           <View style={styles.pricingBox}>
             <View style={styles.priceRow1}>
-              <Text style={styles.label}>Lifetime Membership</Text>
-              <View style={styles.priceRow}>
-                <Text style={styles.discountedPrice}>₹ 2999.00/-</Text>
-                <Text style={styles.originalPrice}>₹ 5000.00/-</Text>
-              </View>
+              <Text style={styles.label}>Select Your Prime Membership</Text>
+              <Text style={styles.motivationalText}>
+              🎁 Every plan comes with powerful perks — select your package 🌟 and level up!🚀 
+              </Text>
             </View>
             <Image
-              source={require("../../assets/images/gift.avif")} // Your actual image path here
+              source={require("../../assets/images/gift.avif")}
               style={styles.giftImage}
             />
           </View>
@@ -117,12 +128,12 @@ const LifetimeMembershipScreen = () => {
           <View style={styles.horizontalLine} />
 
           <View style={styles.packageList}>
-            {packages.map((pkg) => (
+            {packages?.map((pkg) => (
               <TouchableOpacity
-                key={pkg.value}
+                key={pkg.amount}
                 style={[
                   styles.packageItem,
-                  selectedPackage?.value === pkg.value &&
+                  selectedPackage?.amount === pkg.amount &&
                     styles.selectedPackage,
                 ]}
                 onPress={() => setSelectedPackage(pkg)}
@@ -130,17 +141,18 @@ const LifetimeMembershipScreen = () => {
                 <Text
                   style={[
                     styles.packageText,
-                    selectedPackage?.value === pkg.value &&
+                    selectedPackage?.amount === pkg.amount &&
                       styles.selectedPackageText,
                   ]}
                 >
-                  {pkg.label}
+                  ₹ {pkg.amount} - {pkg.in_month} month {pkg.package_name}{" "}
+                  Package
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          <TouchableOpacity style={styles.buyNowBtn} onPress={handleBuyNow}>
+          <TouchableOpacity style={styles.buyNowBtn} onPress={handlePayOffline}>
             <Text style={styles.buyNowText}>Buy Now!</Text>
           </TouchableOpacity>
 
@@ -208,11 +220,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
   },
-  label: {
-    fontSize: 14,
-    fontWeight: "bold",
-    marginBottom: 10,
+  motivationalText: {
+    fontSize: 15,
+    color: "#004080",
+    marginTop: 5,
+    maxWidth: 220,
   },
+  label: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#004080",
+    marginBottom: 6,
+  },
+
   priceRow: {
     flexDirection: "row",
     alignItems: "center",
