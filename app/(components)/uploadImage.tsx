@@ -85,6 +85,10 @@ const UploadDocumentScreen = () => {
             <Modal visible={modalVisible} transparent animationType="slide">
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalCard}>
+                          {/* Cross Icon */}
+            <TouchableOpacity style={styles.closeIcon} onPress={() => setModalVisible(false)}>
+                <Ionicons name="close" size={28} color="#000" />
+            </TouchableOpacity>
                         <Text style={styles.modalTitle}>Please Select</Text>
                         <View style={styles.modalOptions}>
                             <TouchableOpacity style={styles.optionBtn} onPress={() => openPicker('camera')}>
@@ -128,6 +132,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor:'#fff'
     },
+    closeIcon: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    zIndex: 10,
+},
+
     uploadText: { fontSize: 14, marginTop: 10, color: '#000' , fontWeight:'bold'},
     formatText: { fontSize: 12, color: 'gray', marginBottom: 10 ,fontWeight:'bold', marginTop:6},
     browseBtn: {
