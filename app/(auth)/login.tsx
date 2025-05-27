@@ -1,4 +1,5 @@
 import Feather from "@expo/vector-icons/Feather";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
@@ -7,6 +8,7 @@ import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Platform,
   StatusBar,
   StyleSheet,
@@ -32,11 +34,12 @@ export default function LoginScreen() {
     setLoading(true);
     if (!email || !role || !password) {
       Toast.show({
-        type: "Error",
+        type: "error",
         text1: "Missing Fields",
         text2: "Please fill out all required fields.",
         position: "top",
       });
+        setLoading(false);
       return;
     }
     try {
@@ -56,15 +59,16 @@ export default function LoginScreen() {
       );
 
       const data = response.data;
-      console.log("response registerddfdg OTP", data);
+     
 
       if (data.status === "success") {
+        await AsyncStorage.setItem("userData", JSON.stringify(data.user_data));
         Toast.show({
           type: "success",
           text1: response.data.message,
           position: "top",
         });
-        router.push("/(main)/Home");
+        router.replace("/(main)/Home");
       } else {
         Alert.alert("Error", data.message || "Something went wrong.");
       }
@@ -94,6 +98,11 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+       <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0} // adjust as needed
+        > 
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity
@@ -197,6 +206,7 @@ export default function LoginScreen() {
           </Text>
         </View>
       </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

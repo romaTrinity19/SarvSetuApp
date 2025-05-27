@@ -1,4 +1,5 @@
 import { Entypo, FontAwesome, Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React from "react";
 import {
@@ -14,7 +15,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const AccountScreen = () => {
   const name = "roma Chakradhari";
   const initial = name.charAt(0).toUpperCase();
-
+const handleLogout = async () => {
+  try {
+    await AsyncStorage.removeItem('userData');  // userData ko local storage se hatao
+    router.push('/(auth)/login');                // login screen pe redirect karo
+  } catch (error) {
+    console.error('Failed to logout:', error);
+  }
+};
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}  edges={['top']}> 
      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
@@ -54,7 +62,7 @@ const AccountScreen = () => {
         <MenuItem title="Help" subtitle="Learn Easily with Video Guides" route='/(components)/franchise'/>
         <MenuItem title="Contact Us" subtitle="Reach us anytime, anywhere!" route='/(components)/contactUs'/>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={()=>router.push('/(auth)/login')}>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutText}>Log out</Text>
         </TouchableOpacity>
 

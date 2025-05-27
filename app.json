@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "AdbisApp",
+    "name": "SarvSetu",
     "slug": "AdbisApp",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -16,7 +16,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.romachakradhari.AdbisApp"
     },
     "web": {
       "bundler": "metro",
@@ -38,6 +39,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a9fa27d9-0678-40d5-93d4-b1b986dae466"
+      }
     }
   }
 }
