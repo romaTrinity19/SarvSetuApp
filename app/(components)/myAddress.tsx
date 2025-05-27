@@ -139,7 +139,7 @@ export default function MyAddressPage() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "white" },
+  container: { flex: 1, paddingHorizontal: 20, backgroundColor: "white" },
   title: { fontSize: 20, fontWeight: "bold", marginBottom: 20 },
   header: {
     fontSize: 20,

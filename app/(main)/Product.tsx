@@ -313,7 +313,7 @@ export default function ProductListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 20,
+   paddingTop: 10,
     backgroundColor: "#fff",
     paddingBottom: 140,
   },
