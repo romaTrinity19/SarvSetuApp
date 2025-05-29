@@ -1,8 +1,10 @@
+import { fetchUserData, getPackageIngfo } from "@/components/utils/api";
 import { Entypo, FontAwesome, Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
+  Image,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -11,74 +13,175 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const AccountScreen = () => {
-  const name = "roma Chakradhari";
-  const initial = name.charAt(0).toUpperCase();
-const handleLogout = async () => {
-  try {
-    await AsyncStorage.removeItem('userData');  // userData ko local storage se hatao
-    router.push('/(auth)/login');                // login screen pe redirect karo
-  } catch (error) {
-    console.error('Failed to logout:', error);
-  }
+type PackageInfo = {
+  is_approved: string;
+  amount: string;
+  peradd: number;
+  // add other fields you use
 };
+const AccountScreen = () => {
+  const [userData, setUserData] = useState<any>(null);
+  const name = `${userData?.first_name} ${userData?.last_name}`;
+  const [packageInfo, setPackageInfo] = useState<PackageInfo[]>([]);
+
+  const initial = name?.charAt(0).toUpperCase();
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem("userData"); // userData ko local storage se hatao
+      router.push("/(auth)/login"); // login screen pe redirect karo
+    } catch (error) {
+      console.error("Failed to logout:", error);
+    }
+  };
+
+  const loadAndFetchUser = async () => {
+    try {
+      const storedUser = await AsyncStorage.getItem("userData");
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        const regId = parsedUser?.reg_id;
+        const freshUserData = await fetchUserData(regId);
+
+        setUserData(freshUserData || parsedUser);
+      }
+      if (userData?.reg_id) {
+        const packageDetails = await getPackageIngfo(userData.reg_id);
+        setPackageInfo(packageDetails);
+        console.log("user package data aaaaa", packageInfo);
+      }
+    } catch (error) {
+      console.error("Error loading user data:", error);
+    }
+  };
+  useEffect(() => {
+    loadAndFetchUser();
+  }, []);
+  console.log("user package data aaaaa", packageInfo);
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}  edges={['top']}> 
-     <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-    <View style={styles.container}>
-      {/* Sticky Header */}
-      <View style={styles.headerContainer}>
-        <Text style={styles.header}>My Account</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <View style={styles.container}>
+        {/* Sticky Header */}
+        <View style={styles.headerContainer}>
+          <Text style={styles.header}>My Account</Text>
+        </View>
+
+        {/* Scrollable content below */}
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <View style={styles.profileSection}>
+            <View style={styles.avatar}>
+              {userData?.profile_image ? (
+                <Image
+                  source={{ uri: userData.profile_image }}
+                  style={styles.avatarImage}
+                />
+              ) : (
+                <Text style={styles.avatarText}>{initial}</Text>
+              )}
+            </View>
+
+            <View>
+              <Text style={styles.name}>Hello {name}</Text>
+              <Text style={styles.email}>{userData?.email}</Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.listItem2}
+            onPress={() => router.push("/(components)/memberShip")}
+          >
+            <Text style={styles.title}>Buy An Subscription</Text>
+            <Text style={styles.status}>
+              Status:{" "}
+              <Text
+                style={
+                  packageInfo[0]?.is_approved === "1"
+                    ? styles.statusActive
+                    : styles.statusInactive
+                }
+              >
+                {packageInfo[0]?.is_approved === "1" ? "Active" : "Inactive"}
+              </Text>
+            </Text>
+          </TouchableOpacity>
+
+          <MenuItem
+            title="Edit Profile"
+            subtitle="Update your information"
+            route="/(components)/editProfile"
+          />
+          <MenuItem
+            title="Orders"
+            subtitle="Track your orders"
+            route="/(components)/orders"
+          />
+          <MenuItem
+            title="My Address"
+            subtitle="Manage your saved address"
+            route="/(components)/myAddress"
+          />
+          <MenuItem
+            title="Wishlist"
+            subtitle="Save for Later"
+            route="/(components)/wishList"
+          />
+          <MenuItem
+            title="Become A Franchise"
+            subtitle="Join Our Network"
+            route="/(components)/franchise"
+          />
+          <MenuItem
+            title="About Us"
+            subtitle="Get to Know Us"
+            route="/(components)/aboutUs"
+          />
+          <MenuItem
+            title="Privacy Policy"
+            subtitle="How we use your information"
+            route="/(components)/privacyPolicy"
+          />
+          <MenuItem
+            title="Cancellation Policy"
+            subtitle="Cancellation Support Info"
+            route="/(components)/cancellationPolicy"
+          />
+          <MenuItem
+            title="Help"
+            subtitle="Learn Easily with Video Guides"
+            route="/(components)/franchise"
+          />
+          <MenuItem
+            title="Contact Us"
+            subtitle="Reach us anytime, anywhere!"
+            route="/(components)/contactUs"
+          />
+
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Text style={styles.logoutText}>Log out</Text>
+          </TouchableOpacity>
+
+          <View style={styles.socialContainer}>
+            <FontAwesome name="instagram" size={24} style={styles.socialIcon} />
+            <Entypo name="facebook" size={24} style={styles.socialIcon} />
+            <Ionicons name="logo-twitter" size={24} style={styles.socialIcon} />
+          </View>
+        </ScrollView>
       </View>
-
-      {/* Scrollable content below */}
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.profileSection}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initial}</Text>
-          </View>
-          <View>
-            <Text style={styles.name}>Hello {name}</Text>
-            <Text style={styles.email}>romachakradhari123@gmail.com</Text>
-          </View>
-        </View>
-
-        <TouchableOpacity style={styles.listItem2} onPress={() => router.push('/(components)/memberShip')}>
-          <Text style={styles.title}>Buy An Subscription</Text>
-          <Text style={styles.status}>
-            Status: <Text style={styles.statusActive}>In Active</Text>
-          </Text>
-        </TouchableOpacity>
-
-        <MenuItem title="Edit Profile" subtitle="Update your information" route='/(components)/editProfile'/>
-        <MenuItem title="Orders" subtitle="Track your orders" route='/(components)/orders'/>
-        <MenuItem title="My Address" subtitle="Manage your saved address" route='/(components)/myAddress' />
-        <MenuItem title="Wishlist" subtitle="Save for Later" route='/(components)/wishList'/>
-        <MenuItem title="Become A Franchise" subtitle="Join Our Network" route='/(components)/franchise' />
-        <MenuItem title="About Us" subtitle="Get to Know Us" route='/(components)/aboutUs'/>
-        <MenuItem title="Privacy Policy" subtitle="How we use your information" route='/(components)/privacyPolicy'/>
-        <MenuItem title="Cancellation Policy" subtitle="Cancellation Support Info" route='/(components)/cancellationPolicy'/>
-        <MenuItem title="Help" subtitle="Learn Easily with Video Guides" route='/(components)/franchise'/>
-        <MenuItem title="Contact Us" subtitle="Reach us anytime, anywhere!" route='/(components)/contactUs'/>
-
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutText}>Log out</Text>
-        </TouchableOpacity>
-
-        <View style={styles.socialContainer}>
-          <FontAwesome name="instagram" size={24} style={styles.socialIcon} />
-          <Entypo name="facebook" size={24} style={styles.socialIcon} />
-          <Ionicons name="logo-twitter" size={24} style={styles.socialIcon} />
-        </View>
-      </ScrollView>
-    </View>
     </SafeAreaView>
   );
 };
 
-const MenuItem = ({ title, subtitle , route}: { title: string; subtitle: string, route:any }) => (
-  <TouchableOpacity style={styles.listItem} onPress={()=>router.push(route)}>
+const MenuItem = ({
+  title,
+  subtitle,
+  route,
+}: {
+  title: string;
+  subtitle: string;
+  route: any;
+}) => (
+  <TouchableOpacity style={styles.listItem} onPress={() => router.push(route)}>
     <View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.subtitle}>{subtitle}</Text>
@@ -92,6 +195,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
   },
+  avatarImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    resizeMode: "cover",
+  },
+
   headerContainer: {
     backgroundColor: "#fff",
     paddingVertical: 20,
@@ -100,7 +210,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: "#eee",
     zIndex: 10,
-    elevation: 2,  
+    elevation: 2,
   },
   header: {
     fontSize: 20,
@@ -164,6 +274,10 @@ const styles = StyleSheet.create({
     color: "gray",
   },
   statusActive: {
+    color: "green",
+    fontWeight: "bold",
+  },
+  statusInactive: {
     color: "red",
     fontWeight: "bold",
   },
@@ -180,7 +294,7 @@ const styles = StyleSheet.create({
   },
   socialContainer: {
     flexDirection: "row",
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 20,
     gap: 20,
     marginBottom: 60,
@@ -189,6 +303,5 @@ const styles = StyleSheet.create({
     color: "#002B5B",
   },
 });
-
 
 export default AccountScreen;

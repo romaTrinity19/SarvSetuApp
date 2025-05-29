@@ -1,3 +1,8 @@
+import {
+  fetchBannerImages,
+  fetchUserData,
+  getPackageIngfo,
+} from "@/components/utils/api";
 import Feather from "@expo/vector-icons/Feather";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Asset } from "expo-asset";
@@ -7,7 +12,9 @@ import * as Sharing from "expo-sharing";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Dimensions,
   Image,
+  ImageBackground,
   Modal,
   ScrollView,
   StatusBar,
@@ -17,34 +24,11 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Carousel from "react-native-reanimated-carousel";
+import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 
-const adsData = [
-  {
-    id: 1,
-    image:
-      "https://images.pexels.com/photos/674010/pexels-photo-674010.jpeg?cs=srgb&dl=pexels-anjana-c-169994-674010.jpg&fm=jpg",
-    payout: 12.0,
-    subscription: true,
-  },
-  {
-    id: 2,
-    image: require("../../assets/images/image.jpeg"),
-    payout: 12.0,
-    subscription: false,
-  },
-  {
-    id: 3,
-    image: require("../../assets/images/adbisImage.webp"),
-    payout: 12.0,
-    subscription: true,
-  },
-  {
-    id: 4,
-    image: require("../../assets/images/headphone.webp"),
-    payout: 12.0,
-    subscription: false,
-  },
-];
+const { width } = Dimensions.get("window");
 
 type AdCardProps = {
   imageSrc: any;
@@ -56,7 +40,7 @@ const AdCard: React.FC<AdCardProps> = ({ imageSrc, payout, subscription }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [uploadDisabled, setUploadDisabled] = useState(false);
   const [fullscreenVisible, setFullscreenVisible] = useState(false);
-const [isSubscribe , setIsSubscribe] = useState(false);
+  const [isSubscribe, setIsSubscribe] = useState(false);
 
   const shareImageOnWhatsApp = async () => {
     try {
@@ -87,7 +71,6 @@ const [isSubscribe , setIsSubscribe] = useState(false);
 
     if (!result.canceled) {
       setUploadDisabled(true);
-      console.log("Image uploaded:", result.assets[0].uri);
     }
   };
 
@@ -195,37 +178,154 @@ const [isSubscribe , setIsSubscribe] = useState(false);
   );
 };
 
-const Header = () => {
-   const [userData, setUserData] = useState<any>(null);
+const VendorWelcomeScreen = ({ userData }: { userData: any }) => {
+  const router = useRouter();
+  const [banners, setBanners] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [packageInfo, setPackageInfo] = useState<any[]>([]);
 
   useEffect(() => {
-    const loadUserData = async () => {
+    const loadBanners = async () => {
       try {
-        const storedData = await AsyncStorage.getItem("userData");
-        if (storedData) {
-          const user = JSON.parse(storedData);
-          setUserData(user);
-         // console.log('user',user)
+        const bannerUrls = await fetchBannerImages();
+        setBanners(bannerUrls);
+
+        if (userData?.reg_id) {
+          const packageDetails = await getPackageIngfo(userData.reg_id);
+          setPackageInfo(packageDetails);
         }
       } catch (error) {
-        console.error("Failed to load user data:", error);
+        console.error("Failed to load banners");
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadUserData();
+    loadBanners();
   }, []);
 
+  useEffect(() => {
+    console.log("pagage infofoooooooooooooooo", packageInfo);
+  }, []);
+
+  if (loading) {
+    return <ActivityIndicator size="large" color="#007AFF" />;
+  }
+
+  return (
+    <View
+      style={{
+        flex: 1,
+
+        alignItems: "center",
+        paddingTop: 10,
+      }}
+    >
+      {/* 🔄 Image Carousel */}
+      <Carousel
+        width={width * 0.9}
+        height={200}
+        autoPlay
+        data={banners}
+        scrollAnimationDuration={1000}
+        renderItem={({ item }) => (
+          <View style={styles.slide}>
+            <ImageBackground
+              source={{ uri: item }} // ✅ Corrected here
+              style={styles.image2}
+              imageStyle={{ borderRadius: 15 }}
+            ></ImageBackground>
+          </View>
+        )}
+        style={{ marginTop: 30 }}
+        loop
+      />
+
+      <Text style={styles.welcome}>
+        👋 Welcome, {`${userData.first_name} ${userData.last_name}`}!
+      </Text>
+      <Text style={styles.description}>
+        🚀 We're thrilled to have you onboard. Start showcasing your products
+        and reach customers instantly!
+      </Text>
+
+      <View style={styles.packageBox}>
+  {packageInfo[0]?.is_approved === "1" ? (
+    <>
+      <Text style={styles.packageTitle}>🎉 Premium Package Activated!</Text>
+      <Text style={styles.packageText}>
+        💰 <Text style={styles.bold}>Pay Amount:</Text> ₹{packageInfo[0].amount}
+      </Text>
+      <Text style={styles.packageText}>
+        📦 <Text style={styles.bold}>Ads Allowed:</Text> {packageInfo[0].peradd}
+      </Text>
+      <Text style={styles.statusText}>
+        🟢 <Text style={styles.bold}>Status:</Text>{" "}
+        <Text style={styles.statusActive}>Active</Text>
+      </Text>
+      <Text style={styles.packageText}>
+        ✅ Enjoy your benefits and manage your ads like a pro!
+      </Text>
+      <TouchableOpacity
+        style={[styles.buttonPrimary, { marginTop: 12 }]}
+        onPress={() => router.push("/(components)/createShop")}
+      >
+        <Text style={styles.buttonText2}>⚙️ Manage Package</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.buttonSecondary, { marginTop: 10 }]}
+        onPress={() => router.push("/(components)/vendorAdsData")}
+      >
+        <Text style={styles.buttonText2}>📊 Your Ads</Text>
+      </TouchableOpacity>
+    </>
+  ) : (
+    <>
+      <Text style={styles.packageTitle}>🎯 Want to grow faster?</Text>
+      <Text style={styles.packageText}>
+        Buy a premium package to unlock powerful features and boost your reach
+        today! 📈
+      </Text>
+      <Text style={styles.statusText}>
+        🔴 <Text style={styles.bold}>Status:</Text>{" "}
+        <Text style={styles.statusInactive}>Inactive</Text>
+      </Text>
+      <TouchableOpacity
+        style={styles.buttonPrimary}
+        onPress={() => router.push("/(components)/vendorMembership")}
+      >
+        <Text style={styles.buttonText2}>💳 Buy Package</Text>
+      </TouchableOpacity>
+    </>
+  )}
+</View>
+
+    </View>
+  );
+};
+
+const Header = ({ userData }: { userData: any }) => {
   const firstName = userData?.first_name || "";
   const lastName = userData?.last_name || "";
   const initial = firstName?.charAt(0)?.toUpperCase() || "?";
   return (
     <View style={styles.headerContainer}>
-      <View style={styles.initialCircle}>
-        <Text style={styles.initialText}>{initial}</Text>
-      </View>
+      <TouchableOpacity
+        style={styles.initialCircle}
+        onPress={() => router.push("/(main)/Account")}
+      >
+        {userData?.profile_image ? (
+          <Image
+            source={{ uri: userData.profile_image }}
+            style={styles.avatarImage}
+          />
+        ) : (
+          <Text style={styles.initialText}>{initial}</Text>
+        )}
+      </TouchableOpacity>
       <View style={styles.headerTextContainer}>
         <Text style={styles.profileName}>
-           {firstName.toUpperCase()} {" "+lastName.toUpperCase()} 
+          {firstName.toUpperCase()} {" " + lastName.toUpperCase()}
         </Text>
       </View>
     </View>
@@ -235,7 +335,23 @@ const Header = () => {
 const App = () => {
   const [ads, setAds] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userData, setUserData] = useState<any>(null);
 
+  const loadData = async () => {
+    try {
+      const storedUser = await AsyncStorage.getItem("userData");
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        const regId = parsedUser?.reg_id;
+        const freshUserData = await fetchUserData(regId);
+        setUserData(freshUserData || parsedUser);
+      }
+    } catch (error) {
+      console.error("Error loading user data:", error);
+    }
+  };
+
+  loadData();
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -246,7 +362,6 @@ const App = () => {
         "https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=dashboard"
       );
       const json = await response.json();
-     // console.log("dashboard data:", JSON.stringify(json, null, 2));
 
       if (json.status === "success" && json.message?.add_data) {
         setAds(json.message.add_data);
@@ -260,29 +375,35 @@ const App = () => {
     }
   };
 
- // console.log("dashboard dataaaa", ads);
-
-  if (loading) {
-    return <ActivityIndicator size="large" />;
+  if (loading || !userData) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
   }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <View style={{ flex: 1 }}>
-        <Header />
+        <Header userData={userData} />
         <ScrollView
           style={styles.container}
           contentContainerStyle={{ paddingTop: 8 }}
         >
-          {ads?.map((ad) => (
-            <AdCard
-              key={ad.ads_id}
-              imageSrc={ad.imagepath}
-              payout={ad.payamt}
-             subscription={ad?.is_subscribe}
-            />
-          ))}
+          {userData.role === "user" ? (
+            ads?.map((ad) => (
+              <AdCard
+                key={ad.ads_id}
+                imageSrc={ad.imagepath}
+                payout={ad.payamt}
+                subscription={ad?.is_subscribe}
+              />
+            ))
+          ) : (
+            <VendorWelcomeScreen userData={userData} />
+          )}
         </ScrollView>
       </View>
     </SafeAreaView>
@@ -294,7 +415,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-   paddingTop: 10,
+    paddingTop: 10,
     paddingBottom: 12,
     backgroundColor: "#fff",
     shadowColor: "#000",
@@ -303,6 +424,14 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     zIndex: 100,
   },
+
+  avatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20, // match initialCircle's radius
+    resizeMode: "cover",
+  },
+
   initialCircle: {
     width: 40,
     height: 40,
@@ -454,6 +583,110 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
+
+  slide: {
+    borderRadius: 15,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  image2: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "flex-end",
+  },
+  gradient: {
+    height: "100%",
+    width: "100%",
+    borderRadius: 15,
+  },
+  welcome: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginTop: 40,
+    textAlign: "center",
+    color: "#002B5B",
+  },
+  description: {
+    fontSize: 16,
+    color: "#002B5B",
+    textAlign: "center",
+    marginTop: 10,
+    marginBottom: 20,
+    paddingHorizontal: 25,
+    lineHeight: 22,
+  },
+ packageBox: {
+  backgroundColor: "#e6f0ff",
+  padding: 25,
+  borderRadius: 20,
+  marginTop: 20,
+  width: "90%",
+  alignItems: "center",
+  shadowColor: "#007AFF",
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.1,
+  shadowRadius: 8,
+  elevation: 4,
+  marginBottom: 25,
+  borderWidth: 1,
+  borderColor: "#cce0ff",
+},
+packageTitle: {
+  fontSize: 20,
+  fontWeight: "bold",
+  color: "#002B5B",
+  marginBottom: 10,
+  textAlign: "center",
+},
+packageText: {
+  fontSize: 15,
+  textAlign: "center",
+  color: "#333",
+  marginBottom: 10,
+  lineHeight: 22,
+},
+bold: {
+  fontWeight: "bold",
+},
+statusText: {
+  fontSize: 15,
+  color: "#444",
+  marginBottom: 10,
+},
+statusActive: {
+  color: "green",
+  fontWeight: "bold",
+},
+statusInactive: {
+  color: "red",
+  fontWeight: "bold",
+},
+buttonPrimary: {
+  backgroundColor: "#002B5B",
+  paddingVertical: 12,
+  paddingHorizontal: 28,
+  borderRadius: 30,
+  width: "80%",
+  alignItems: "center",
+},
+buttonSecondary: {
+  backgroundColor: "#002B5B",
+  paddingVertical: 12,
+  paddingHorizontal: 28,
+  borderRadius: 30,
+  width: "80%",
+  alignItems: "center",
+},
+buttonText2: {
+  color: "#fff",
+  fontSize: 16,
+  fontWeight: "600",
+},
+
 });
 
 export default App;

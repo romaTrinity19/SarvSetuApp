@@ -63,6 +63,7 @@ export default function LoginScreen() {
 
       if (data.status === "success") {
         await AsyncStorage.setItem("userData", JSON.stringify(data.user_data));
+       
         Toast.show({
           type: "success",
           text1: response.data.message,
@@ -133,7 +134,7 @@ export default function LoginScreen() {
             >
               <Picker.Item label="--Select Role--" value="" />
               <Picker.Item label="User" value="user" />
-              <Picker.Item label="Vendor" value="vendor" />
+              <Picker.Item label="merchant" value="vendor" />
             </Picker>
           </View>
           <Text style={styles.label}>Email Address</Text>

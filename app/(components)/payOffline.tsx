@@ -1,31 +1,33 @@
 import {
   Feather,
   FontAwesome,
-  FontAwesome5,
   Ionicons,
-  MaterialCommunityIcons,
   MaterialIcons,
 } from "@expo/vector-icons";
-import { router } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as FileSystem from "expo-file-system";
+import * as ImagePicker from "expo-image-picker";
+import { ImagePickerAsset } from "expo-image-picker";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
+  ActivityIndicator,
   Clipboard,
   Image,
   Modal,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { useLocalSearchParams } from "expo-router";
-import * as ImagePicker from "expo-image-picker";
-import { ImagePickerAsset } from "expo-image-picker";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 export default function PaymentInformation() {
+  const [userData, setUserData] = useState<any>(null);
   const [selectedMethod, setSelectedMethod] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [transactionId, setTransactionId] = useState("");
@@ -34,13 +36,13 @@ export default function PaymentInformation() {
   );
   const { packages } = useLocalSearchParams(); // This is a JSON string
   const [selectedPackage, setSelectedPackage] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (typeof packages === "string") {
       try {
         const parsedPackage = JSON.parse(packages);
         setSelectedPackage(parsedPackage);
-        console.log("Parsed package:", parsedPackage);
       } catch (error) {
         console.error("Failed to parse package:", error);
       }
@@ -48,7 +50,7 @@ export default function PaymentInformation() {
   }, [packages]);
 
   const qrCodeImage = require("../../assets/images/react-logo.png"); // Replace with your actual QR image
-  console.log("selected package", packages);
+
   const handleSelect = (method: any) => {
     setSelectedMethod(selectedMethod === method ? null : method);
   };
@@ -56,7 +58,8 @@ export default function PaymentInformation() {
   const copyToClipboard = (text: any) => {
     Clipboard.setString(text);
   };
-  const handleVerify = () => {
+
+  const handleVerify = async () => {
     if (!transactionId.trim()) {
       Toast.show({
         type: "error",
@@ -64,9 +67,9 @@ export default function PaymentInformation() {
         text2: "Please enter your Transaction ID.",
         position: "top",
       });
-
       return;
     }
+
     if (!selectedImage) {
       Toast.show({
         type: "error",
@@ -76,23 +79,119 @@ export default function PaymentInformation() {
       });
       return;
     }
-    setModalVisible(false);
-    router.push("/(main)/Home");
+
+    if (!userData || !selectedPackage) {
+      Toast.show({
+        type: "error",
+        text1: "Missing Data",
+        text2: "User or package information is incomplete.",
+        position: "top",
+      });
+      return;
+    }
+
+    // ✅ Verify that file exists
+    const fileInfo = await FileSystem.getInfoAsync(selectedImage.uri);
+    if (!fileInfo.exists) {
+      Toast.show({
+        type: "error",
+        text1: "File Error",
+        text2: "Selected image file does not exist.",
+        position: "top",
+      });
+      return;
+    }
+
+    // ✅ Prepare FormData
+    const formData = new FormData();
+    formData.append("reg_id", userData?.reg_id.toString());
+    formData.append("packege_id", selectedPackage?.package_id.toString()); // spelling matches backend
+    formData.append("transection_id", transactionId); // spelling matches backend
+    formData.append("type", "bypackege");
+
+    formData.append("image", {
+      uri: selectedImage.uri,
+      name: selectedImage.fileName || "screenshot.jpg",
+      type: "image/jpeg",
+    } as any);
+    setLoading(true);
+    try {
+      const response = await fetch(
+        "https://sarvsetu.trinitycrm.in/admin/Api/package_api.php",
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+          },
+          body: formData,
+        }
+      );
+      console.log("textResult response", response);
+      const textResult = await response.text();
+      console.log("textResult", textResult);
+      const json = JSON.parse(textResult);
+
+      if (response.ok && json.status === "success") {
+        Toast.show({
+          type: "success",
+          text1: "Success",
+          text2: "Payment verified successfully.",
+          position: "top",
+        });
+        setTransactionId("");
+        setSelectedImage(null);
+        setSelectedMethod(null);
+        setModalVisible(false);
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Server Error",
+          text2: textResult || "Something went wrong.",
+          position: "top",
+        });
+      }
+    } catch (error) {
+      console.error("Payment verify error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Network Error",
+        text2: "Failed to verify payment. Please try again.",
+        position: "top",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.8,
     });
-
     if (!result.canceled) {
       setSelectedImage(result.assets[0]);
     }
   };
 
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const storedData = await AsyncStorage.getItem("userData");
+        if (storedData) {
+          const user = JSON.parse(storedData);
+          setUserData(user);
+        }
+      } catch (error) {
+        console.error("Failed to load user data:", error);
+      }
+    };
+    loadUserData();
+  }, []);
+
   return (
-    <View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <View style={styles.headerContainer}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" color="#000" size={24} />
@@ -106,13 +205,19 @@ export default function PaymentInformation() {
           <Text style={styles.packageSubtext}>
             You’ve chosen the{" "}
             <Text style={styles.packageLabel}>
-              {selectedPackage?.in_month}-month
+              {selectedPackage?.type === "user"
+                ? `${selectedPackage?.in_month} - Month`
+                : `${selectedPackage?.peradd} - Ads`}
             </Text>{" "}
             <Text style={styles.packageLabel}>
-              {selectedPackage?.package_name} Id - {selectedPackage?.package_id}
+              {selectedPackage?.package_name}
             </Text>{" "}
             plan for just{" "}
-            <Text style={styles.packageLabel}>₹{selectedPackage?.amount}</Text>!
+            <Text style={styles.packageLabel}>
+              {" "}
+              ₹ {selectedPackage?.amount}
+            </Text>
+            !
           </Text>
           <Text style={styles.packageSubtext}>
             Unlock premium features and enjoy exclusive benefits throughout your
@@ -293,13 +398,18 @@ export default function PaymentInformation() {
             <TouchableOpacity
               style={styles.verifyButton}
               onPress={handleVerify}
+              disabled={loading}
             >
-              <Text style={styles.verifyButtonText}>Verify Payment</Text>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.verifyButtonText}>Verify Payment</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -309,34 +419,34 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   selectedPackageBox: {
-  backgroundColor: "#E0F2FE",
-  borderRadius: 12,
-  padding: 16,
-  marginVertical: 20,
-  borderLeftWidth: 5,
-  borderLeftColor: "#057496",
-   borderWidth: 1,
-   borderColor: "#057496",
-},
-packageHeading: {
-  fontSize: 18,
-  fontWeight: "bold",
-  color: "#057496",
-  marginBottom: 6,
-},
-packageSubtext: {
-  fontSize: 16,
-  color: "#0369A1",
-},
-packageLabel: {
-  fontWeight: "bold",
-  color: "#f36c21",
-},
-packageNote: {
-  marginTop: 10,
-  fontSize: 14,
-  color: "#666",
-},
+    backgroundColor: "#E0F2FE",
+    borderRadius: 12,
+    padding: 16,
+    marginVertical: 20,
+    borderLeftWidth: 5,
+    borderLeftColor: "#057496",
+    borderWidth: 1,
+    borderColor: "#057496",
+  },
+  packageHeading: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#057496",
+    marginBottom: 6,
+  },
+  packageSubtext: {
+    fontSize: 16,
+    color: "#0369A1",
+  },
+  packageLabel: {
+    fontWeight: "bold",
+    color: "#f36c21",
+  },
+  packageNote: {
+    marginTop: 10,
+    fontSize: 14,
+    color: "#666",
+  },
 
   uploadButton: {
     backgroundColor: "#0284C7",
@@ -395,13 +505,13 @@ packageNote: {
     fontSize: 22,
     fontWeight: "700",
     marginBottom: 4,
-    color:'#057496'
+    color: "#057496",
   },
   headerContainer: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop: 40,
+    paddingTop: 20,
     paddingBottom: 15,
     backgroundColor: "#fff",
     elevation: 4,

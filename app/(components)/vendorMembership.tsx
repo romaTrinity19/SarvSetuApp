@@ -2,6 +2,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   ScrollView,
   StyleSheet,
@@ -20,6 +21,7 @@ interface Package {
   package_name: string;
   in_month: string;
   amount: string;
+  peradd: string;
 }
 const LifetimeMembershipScreen = () => {
   const [packages, setPackage] = useState<Package[]>([]);
@@ -31,11 +33,10 @@ const LifetimeMembershipScreen = () => {
     const fetchPackages = async () => {
       try {
         const response = await axios.get(
-          "https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=getpackage"
+          "https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=getvendorpackage"
         );
 
         const data = response.data;
-         console.log('data packagesfhhg', data)
 
         if (
           data.status === "success" &&
@@ -80,7 +81,9 @@ const LifetimeMembershipScreen = () => {
       },
     });
   };
- console.log('user packages', packages)
+
+  console.log("packages vendor packages", packages);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       <LinearGradient colors={["#053159", "#057496"]} style={styles.container}>
@@ -116,7 +119,8 @@ const LifetimeMembershipScreen = () => {
             <View style={styles.priceRow1}>
               <Text style={styles.label}>Select Your Prime Membership</Text>
               <Text style={styles.motivationalText}>
-              🎁 Every plan comes with powerful perks — select your package 🌟 and level up!🚀 
+                🎁 Every plan comes with powerful perks — select your package 🌟
+                and level up!🚀
               </Text>
             </View>
             <Image
@@ -129,31 +133,38 @@ const LifetimeMembershipScreen = () => {
           <View style={styles.horizontalLine} />
 
           <View style={styles.packageList}>
-            {packages?.map((pkg) => (
-              <TouchableOpacity
-                key={pkg.amount}
-                style={[
-                  styles.packageItem,
-                  selectedPackage?.amount === pkg.amount &&
-                    styles.selectedPackage,
-                ]}
-                onPress={() => setSelectedPackage(pkg)}
-              >
-                <Text
+            {loading ? (
+              <ActivityIndicator size="large" color="#fff" />
+            ) : packages.length === 0 ? (
+              <Text style={{ textAlign: "center", marginTop: 10 }}>
+                No packages found.
+              </Text>
+            ) : (
+              packages.map((pkg) => (
+                <TouchableOpacity
+                  key={pkg.amount}
                   style={[
-                    styles.packageText,
+                    styles.packageItem,
                     selectedPackage?.amount === pkg.amount &&
-                      styles.selectedPackageText,
+                      styles.selectedPackage,
                   ]}
+                  onPress={() => setSelectedPackage(pkg)}
                 >
-                  ₹ {pkg.amount} - {pkg.in_month} month {pkg.package_name}{" "}
-                  Package
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[
+                      styles.packageText,
+                      selectedPackage?.amount === pkg.amount &&
+                        styles.selectedPackageText,
+                    ]}
+                  >
+                    ₹ {pkg.amount} - {pkg.peradd} Per Ads {pkg.package_name}{" "}
+                    Package
+                  </Text>
+                </TouchableOpacity>
+              ))
+            )}
           </View>
 
-         
           <TouchableOpacity
             style={styles.payOfflineBtn}
             onPress={handlePayOffline}

@@ -106,7 +106,6 @@ export default function ProductListScreen() {
     const userDataString = await AsyncStorage.getItem("userData");
     if (userDataString) {
       const userData = JSON.parse(userDataString);
-      console.log("Stored User Dataaaaaaa:", userData);
       setUserData(userData);
     }
   };
@@ -119,7 +118,6 @@ export default function ProductListScreen() {
       const loadShops = async () => {
         const savedShops = await AsyncStorage.getItem("shops");
         const parsed = savedShops ? JSON.parse(savedShops) : [];
-        console.log("shop detailssssssssssss", parsed);
         setProducts([...parsed, ...productsData]);
       };
       loadShops();
@@ -170,14 +168,14 @@ export default function ProductListScreen() {
           >
             <Text style={styles.allProductsText}>All Shop & Services</Text>
           </TouchableOpacity>
-          {userData?.role === "vendor" && (
+          {/* {userData?.role === "vendor" && (
             <TouchableOpacity
               style={styles.allProductsButton}
               onPress={() => router.push("/(components)/createShop")}
             >
               <Text style={styles.allProductsText}>+ Add Shop</Text>
             </TouchableOpacity>
-          )}
+          )} */}
         </View>
 
         <FlatList

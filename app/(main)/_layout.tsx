@@ -33,7 +33,7 @@ export default function MainLayout() {
               iconName = focused ? "person" : "person-outline";
               break;
             case "Referral":
-              iconName = focused ? "list" : "list-outline";
+              iconName = focused ? "gift" : "gift-outline";
               break;
           }
           return <Ionicons name={iconName} size={size} color={color} />;
