@@ -1,8 +1,12 @@
+import { fetchUserData } from "@/components/utils/api";
 import { Feather, Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import * as FileSystem from "expo-file-system";
+import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
-import { router, useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Image,
   Modal,
@@ -13,21 +17,24 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 //import { useDocumentStore } from '../store/useDocumentStore';
 
 const UploadDocumentScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  //const { type } = route.params as { type: string };
+   
+   
 
   const [image, setImage] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
-
-  const { type } = useLocalSearchParams();
-  //const { setDocument } = useDocumentStore();
+  const [userData, setUserData] = useState<any>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const { adID } = useLocalSearchParams();
 
   const openPicker = async (mode: "camera" | "gallery") => {
     setModalVisible(false);
+
     const result = await (mode === "camera"
       ? ImagePicker.launchCameraAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -39,9 +46,125 @@ const UploadDocumentScreen = () => {
         }));
 
     if (!result.canceled) {
-      const uri = result.assets[0].uri;
-      setImage(uri);
-      // setDocument(type as string, uri);
+      const selectedImage = result.assets[0];
+
+      // Compress and resize the image
+      const compressed = await ImageManipulator.manipulateAsync(
+        selectedImage.uri,
+        [{ resize: { width: 800 } }],
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+      );
+
+      setImage(compressed.uri);
+      // setDocument(type as string, compressed.uri); // Uncomment if needed
+    }
+  };
+
+  const loadData = async () => {
+    try {
+      const storedUser = await AsyncStorage.getItem("userData");
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        const regId = parsedUser?.reg_id;
+        const freshUserData = await fetchUserData(regId);
+        setUserData(freshUserData || parsedUser);
+      }
+    } catch (error) {
+      console.error("Error loading user data:", error);
+    }
+  };
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
+  const handleSubmit = async () => {
+    if (submitting) return;
+
+    if (!image || !userData?.reg_id) {
+      Toast.show({
+        type: "error",
+        text1: "Incomplete Form",
+        text2: "Please upload an image and ensure user is logged in.",
+      });
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const fileInfo = await FileSystem.getInfoAsync(image);
+      if (!fileInfo.exists) {
+        Toast.show({
+          type: "error",
+          text1: "File Error",
+          text2: "Selected image file does not exist.",
+        });
+        setSubmitting(false);
+        return;
+      }
+
+      const filename = image.split("/").pop();
+
+      const formData = new FormData();
+      formData.append("type", "savestatus");
+      formData.append("ads_id", Array.isArray(adID) ? adID[0] : adID || "");
+      formData.append("reg_id", userData.reg_id.toString());
+      formData.append("image", {
+        uri: image,
+        name: filename || "upload.jpg",
+        type: "image/jpeg",
+      } as any);
+
+      const response = await fetch(
+        "https://sarvsetu.trinitycrm.in/admin/Api/package_api.php",
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            // DO NOT manually set 'Content-Type' for FormData in React Native
+          },
+          body: formData,
+        }
+      );
+
+      const responseText = await response.text();
+
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseErr) {
+        console.error("Failed to parse response:", responseText);
+        throw new Error("Invalid server response");
+      }
+
+      if (response.ok && result.status === "success") {
+        Toast.show({
+          type: "success",
+          text1: "Upload Successful",
+          text2: "Your image has been submitted successfully.",
+        });
+        router.replace("/(main)/Home");
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Upload Failed",
+          text2: result?.message || "Something went wrong. Try again.",
+        });
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Network Error",
+        text2: "Unable to upload. Please try again.",
+      });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -57,7 +180,7 @@ const UploadDocumentScreen = () => {
             color="black"
             onPress={() => navigation.goBack()}
           />
-          <Text style={styles.headerTitle}>{type} Upload ScreenShot</Text>
+          <Text style={styles.headerTitle}>Upload ScreenShot</Text>
         </View>
 
         {/* Text */}
@@ -98,10 +221,13 @@ const UploadDocumentScreen = () => {
 
           {/* Upload Button */}
           <TouchableOpacity
-            style={styles.uploadButton}
-            onPress={() => router.back()}
+            style={[styles.uploadButton, submitting && { opacity: 0.6 }]}
+            onPress={handleSubmit}
+            disabled={submitting}
           >
-            <Text style={styles.uploadButtonText}>Upload Document</Text>
+            <Text style={styles.uploadButtonText}>
+              {submitting ? "Uploading..." : "Upload Document"}
+            </Text>
           </TouchableOpacity>
         </View>
 

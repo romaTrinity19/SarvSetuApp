@@ -93,7 +93,6 @@ export default function ProductListScreen() {
   const [userData, setUserData] = useState<any>(null);
   const [selectedFilter, setSelectedFilter] = useState("recommended");
 
-  
   const toggleWishlist = (productId: any) => {
     setWishlist((prev) =>
       prev.includes(productId)
@@ -124,7 +123,7 @@ export default function ProductListScreen() {
     }, [])
   );
 
-   const applyFilter = (type: any) => {
+  const applyFilter = (type: any) => {
     setFilterVisible(false);
     if (type === "lowest") {
       setProducts([...products].sort((a, b) => a.price - b.price));
@@ -142,176 +141,154 @@ export default function ProductListScreen() {
   };
 
   return (
-     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}  edges={['top']}>
-       <StatusBar barStyle="dark-content" backgroundColor="#fff" />  
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Shop & Services</Text>
-        <Feather name="shopping-bag" size={24} color="black" />
-      </View>
-      <View style={styles.horizontalLine} />
-      <View style={{ marginHorizontal: 15 }}>
-        <View
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            marginVertical: 10,
-          }}
-        >
-          <TouchableOpacity onPress={() => setFilterVisible(true)}>
-            <Ionicons name="filter" size={24} color="black" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.allProductsButton}
-            onPress={() => setProducts(products)}
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerText}>Shop & Services</Text>
+        </View>
+        <View style={styles.horizontalLine} />
+        <View style={{ marginHorizontal: 15 }}>
+          <View
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              marginVertical: 10,
+            }}
           >
-            <Text style={styles.allProductsText}>All Shop & Services</Text>
-          </TouchableOpacity>
-          {/* {userData?.role === "vendor" && (
+            <TouchableOpacity onPress={() => setFilterVisible(true)}>
+              <Ionicons name="filter" size={24} color="black" />
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.allProductsButton}
-              onPress={() => router.push("/(components)/createShop")}
+              onPress={() => setProducts(products)}
             >
-              <Text style={styles.allProductsText}>+ Add Shop</Text>
-            </TouchableOpacity>
-          )} */}
-        </View>
-
-        <FlatList
-          data={products}
-          keyExtractor={(item) => item.id}
-          numColumns={1}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContainer}
-          renderItem={({ item }) => (
-            <View style={styles.productCard}>
-              <TouchableOpacity
-                style={styles.imageContainer}
-                onPress={() =>
-                  router.push({
-                    pathname: "/(components)/productDetails/[slug]",
-                    params: {
-                      slug: item.id,
-                      name: item.name,
-                      price: item.price,
-                      originalPrice: item.originalPrice,
-                      images: item.image,
-                      otherImages: item?.images,
-                      phoneNumber: item.phoneNumber,
-                      whatsappNumber: item.whatsappNumber,
-                      website: item.website,
-                    },
-                  })
-                }
-              >
-                <Image
-                  source={item.image}
-                  style={styles.productImage}
-                  resizeMode="cover"
-                />
-
-                <TouchableOpacity
-                  style={styles.heartIcon}
-                  onPress={() => toggleWishlist(item.id)}
-                >
-                  <Ionicons
-                    name={
-                      wishlist.includes(item.id) ? "heart" : "heart-outline"
-                    }
-                    size={22}
-                    color={wishlist.includes(item.id) ? "red" : "gray"}
-                  />
-                </TouchableOpacity>
-              </TouchableOpacity>
-
-              <Text style={styles.productName}>{item.name}</Text>
-              <Text style={styles.productPrice}>
-                ₹ {item.price.toFixed(2)}{" "}
-                <Text style={styles.strike}>
-                  ₹ {item.originalPrice.toFixed(2)}
-                </Text>
-              </Text>
-
-              <View style={styles.buttonContainer}>
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={() => Linking.openURL(`tel:${item.phoneNumber}`)}
-                >
-                  <Text style={styles.buttonText}>Call</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={() => Linking.openURL(item.website)}
-                >
-                  <Text style={styles.buttonText}>Visit Now</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={() =>
-                    Linking.openURL(`https://wa.me/${item.whatsappNumber}`)
-                  }
-                >
-                  <Text style={styles.buttonText}>Contact Us</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-        />
-      </View>
-
-      <Modal visible={filterVisible} transparent animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Sort By</Text>
-
-            {["recommended", "lowest", "highest"].map((type) => (
-              <TouchableOpacity
-                key={type}
-                style={styles.radioRow}
-                onPress={() => handleFilterSelection(type)}
-              >
-                <Text style={styles.radioLabel}>
-                  {type === "recommended"
-                    ? "RECOMMENDED"
-                    : type === "lowest"
-                    ? "LOWEST PRICE"
-                    : "HIGHEST PRICE"}
-                </Text>
-
-                <Ionicons
-                  name={
-                    selectedFilter === type
-                      ? "radio-button-on"
-                      : "radio-button-off"
-                  }
-                  size={20}
-                  color="#002B5B"
-                  style={{ marginRight: 10 }}
-                />
-              </TouchableOpacity>
-            ))}
-
-            <TouchableOpacity
-              onPress={() => setFilterVisible(false)}
-              style={styles.closeButton}
-            >
-              <Entypo name="cross" size={24} color="black" />
+              <Text style={styles.allProductsText}>All Shop & Services</Text>
             </TouchableOpacity>
           </View>
+
+          <FlatList
+            data={products}
+            keyExtractor={(item) => item.id}
+            numColumns={1}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContainer}
+            renderItem={({ item }) => (
+              <View style={styles.productCard}>
+                <TouchableOpacity
+                  style={styles.imageContainer}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(components)/productDetails/[slug]",
+                      params: {
+                        slug: item.id,
+                        name: item.name,
+                        price: item.price,
+                        originalPrice: item.originalPrice,
+                        images: item.image,
+                        otherImages: item?.images,
+                        phoneNumber: item.phoneNumber,
+                        whatsappNumber: item.whatsappNumber,
+                        website: item.website,
+                      },
+                    })
+                  }
+                >
+                  <Image
+                    source={item.image}
+                    style={styles.productImage}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+
+                <Text style={styles.productName}>{item.name}</Text>
+                <Text style={styles.productPrice}>
+                  ₹ {item.price.toFixed(2)}{" "}
+                  <Text style={styles.strike}>
+                    ₹ {item.originalPrice.toFixed(2)}
+                  </Text>
+                </Text>
+
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => Linking.openURL(`tel:${item.phoneNumber}`)}
+                  >
+                    <Text style={styles.buttonText}>Call</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => Linking.openURL(item.website)}
+                  >
+                    <Text style={styles.buttonText}>Visit Now</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() =>
+                      Linking.openURL(`https://wa.me/${item.whatsappNumber}`)
+                    }
+                  >
+                    <Text style={styles.buttonText}>WhatsApp</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          />
         </View>
-      </Modal>
-    </View>
-    </SafeAreaView> 
+
+        <Modal visible={filterVisible} transparent animationType="slide">
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Sort By</Text>
+
+              {["recommended", "lowest", "highest"].map((type) => (
+                <TouchableOpacity
+                  key={type}
+                  style={styles.radioRow}
+                  onPress={() => handleFilterSelection(type)}
+                >
+                  <Text style={styles.radioLabel}>
+                    {type === "recommended"
+                      ? "RECOMMENDED"
+                      : type === "lowest"
+                      ? "LOWEST PRICE"
+                      : "HIGHEST PRICE"}
+                  </Text>
+
+                  <Ionicons
+                    name={
+                      selectedFilter === type
+                        ? "radio-button-on"
+                        : "radio-button-off"
+                    }
+                    size={20}
+                    color="#002B5B"
+                    style={{ marginRight: 10 }}
+                  />
+                </TouchableOpacity>
+              ))}
+
+              <TouchableOpacity
+                onPress={() => setFilterVisible(false)}
+                style={styles.closeButton}
+              >
+                <Entypo name="cross" size={24} color="black" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-   paddingTop: 10,
+    paddingTop: 10,
     backgroundColor: "#fff",
     paddingBottom: 140,
   },
@@ -319,16 +296,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     overflow: "hidden",
     backgroundColor: "#fff",
-  },
-
-  heartIcon: {
-    position: "absolute",
-    bottom: 5,
-    right: 5,
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 3,
-    elevation: 3,
   },
 
   header: {

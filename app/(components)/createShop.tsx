@@ -1,236 +1,26 @@
-// import React, { useState } from "react";
-// import {
-//   View,
-//   Text,
-//   TextInput,
-//   Image,
-//   ScrollView,
-//   TouchableOpacity,
-//   Button,
-//   StyleSheet,
-// } from "react-native";
-// import * as ImagePicker from "expo-image-picker";
-// import { useRouter } from "expo-router";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
-// import { SafeAreaView } from "react-native-safe-area-context";
-
-// const CreateShopScreen = () => {
-//   const router = useRouter();
-
-//   const [mainImage, setMainImage] = useState<string | null>(null);
-//   const [otherImages, setOtherImages] = useState<string[]>([]);
-//   const [title, setTitle] = useState("");
-//   const [description, setDescription] = useState("");
-//   const [callNumber, setCallNumber] = useState("");
-//   const [website, setWebsite] = useState("");
-//   const [whatsapp, setWhatsapp] = useState("");
-
-//   const pickMainImage = async () => {
-//     const result = await ImagePicker.launchImageLibraryAsync({
-//       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-//       quality: 1,
-//     });
-
-//     if (!result.canceled) {
-//       setMainImage(result.assets[0].uri);
-//     }
-//   };
-
-//   const pickOtherImages = async () => {
-//     const result = await ImagePicker.launchImageLibraryAsync({
-//       allowsMultipleSelection: true,
-//       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-//       quality: 1,
-//       selectionLimit: 5,
-//     });
-
-//     if (!result.canceled) {
-//       const selectedUris = result.assets.map((asset) => asset.uri);
-//       setOtherImages(selectedUris);
-//     }
-//   };
-
-//   const handleSubmit = async () => {
-//     const shopData = {
-//       id: Date.now().toString(),
-//       name: title,
-//       price: 0,
-//       originalPrice: 0,
-//       image: { uri: mainImage || "" },
-//       images: otherImages,
-//       phoneNumber: callNumber,
-//       website,
-//       whatsappNumber: whatsapp,
-//     };
-
-//     const existing = await AsyncStorage.getItem("shops");
-//     const shops = existing ? JSON.parse(existing) : [];
-//     shops.push(shopData);
-//     await AsyncStorage.setItem("shops", JSON.stringify(shops));
-
-//     router.push("/(main)/Product");
-//   };
-
-//   return (
-//     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-//     <ScrollView style={styles.container}>
-//       <Text style={styles.heading}>Create Shop</Text>
-
-//       <Text style={styles.label}>Main Image</Text>
-//       <TouchableOpacity onPress={pickMainImage} style={styles.imageButton}>
-//         <Text style={styles.imageButtonText}>Pick Main Image</Text>
-//       </TouchableOpacity>
-//       {mainImage && (
-//         <Image source={{ uri: mainImage }} style={styles.mainImage} />
-//       )}
-
-//       <Text style={styles.label}>Other Images</Text>
-//       <TouchableOpacity onPress={pickOtherImages} style={styles.imageButton}>
-//         <Text style={styles.imageButtonText}>Pick Other Images</Text>
-//       </TouchableOpacity>
-//       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-//         {otherImages.map((uri, index) => (
-//           <Image key={index} source={{ uri }} style={styles.otherImage} />
-//         ))}
-//       </ScrollView>
-
-//       <Text style={styles.label}>Shop Title</Text>
-//       <TextInput
-//         value={title}
-//         onChangeText={setTitle}
-//         style={styles.input}
-//         placeholder="Enter shop title"
-//       />
-
-//       <Text style={styles.label}>Description</Text>
-//       <TextInput
-//         value={description}
-//         onChangeText={setDescription}
-//         style={[styles.input, { height: 80 }]}
-//         placeholder="Write a short description"
-//         multiline
-//       />
-
-//       <Text style={styles.label}>Call Number</Text>
-//       <TextInput
-//         value={callNumber}
-//         onChangeText={setCallNumber}
-//         keyboardType="phone-pad"
-//         style={styles.input}
-//         placeholder="Enter contact number"
-//       />
-
-//       <Text style={styles.label}>Website</Text>
-//       <TextInput
-//         value={website}
-//         onChangeText={setWebsite}
-//         style={styles.input}
-//         placeholder="https://example.com"
-//       />
-
-//       <Text style={styles.label}>WhatsApp Contact</Text>
-//       <TextInput
-//         value={whatsapp}
-//         onChangeText={setWhatsapp}
-//         keyboardType="phone-pad"
-//         style={styles.input}
-//         placeholder="Enter WhatsApp number"
-//       />
-
-//       <TouchableOpacity onPress={handleSubmit} style={styles.button}>
-//         <Text style={styles.buttonText}>Create Shop</Text>
-//       </TouchableOpacity>
-//     </ScrollView>
-//      </SafeAreaView>
-//   );
-// };
-
-// const PRIMARY = "#002B5B";
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     padding: 20,
-//     backgroundColor: "#fff",
-//   },
-//   heading: {
-//     fontSize: 24,
-//     fontWeight: "bold",
-//     color: PRIMARY,
-//     marginBottom: 20,
-//   },
-//   label: {
-//     fontSize: 16,
-//     fontWeight: "500",
-//     marginTop: 12,
-//     marginBottom: 4,
-//     color: PRIMARY,
-//   },
-//   input: {
-//     borderWidth: 1,
-//     borderColor: "#ccc",
-//     borderRadius: 8,
-//     padding: 10,
-//     backgroundColor: "#f9f9f9",
-//   },
-//   imageButton: {
-//     backgroundColor: PRIMARY,
-//     padding: 10,
-//     borderRadius: 6,
-//     alignItems: "center",
-//     marginBottom: 10,
-//   },
-//   imageButtonText: {
-//     color: "#fff",
-//     fontWeight: "600",
-//   },
-//   mainImage: {
-//     width: "100%",
-//     height: 180,
-//     borderRadius: 10,
-//     marginBottom: 10,
-//   },
-//   otherImage: {
-//     width: 80,
-//     height: 80,
-//     borderRadius: 8,
-//     marginRight: 10,
-//   },
-//   button: {
-//     backgroundColor: PRIMARY,
-//     padding: 15,
-//     borderRadius: 8,
-//     marginTop: 25,
-//     alignItems: "center",
-//     marginBottom:100
-//   },
-//   buttonText: {
-//     color: "#fff",
-//     fontSize: 16,
-//     fontWeight: "600",
-//   },
-// });
-
-// export default CreateShopScreen;
-
 import { fetchUserData } from "@/components/utils/api";
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
-import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+import * as ImageManipulator from "expo-image-manipulator";
+
 
 const SimpleFormScreen = () => {
   const [image, setImage] = useState<string | null>(null);
@@ -239,6 +29,7 @@ const SimpleFormScreen = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<any>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const loadData = async () => {
     try {
@@ -256,17 +47,31 @@ const SimpleFormScreen = () => {
   useEffect(() => {
     loadData();
   }, []);
+  
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 1,
-    });
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    quality: 1, // this only affects the camera, not picker
+  });
 
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
-    }
-  };
+  if (!result.canceled) {
+    const selectedImage = result.assets[0];
+    const compressed = await ImageManipulator.manipulateAsync(
+      selectedImage.uri,
+      [{ resize: { width: 800 } }], 
+      { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG } 
+    );
+
+    setImage(compressed.uri);  
+  }
+};
+
 
   const handleDateChange = (_: any, selectedDate?: Date) => {
     setShowDatePicker(Platform.OS === "ios"); // keep picker open on iOS
@@ -284,7 +89,7 @@ const SimpleFormScreen = () => {
       });
       return;
     }
-
+    setSubmitting(true);
     try {
       const fileInfo = await FileSystem.getInfoAsync(image);
       if (!fileInfo.exists) {
@@ -321,11 +126,11 @@ const SimpleFormScreen = () => {
           body: formData,
         }
       );
-     
 
+      console.log("package response", response);
       const text = await response.text();
+      console.log("package text", text);
       const result = JSON.parse(text);
-     
 
       if (response.ok && result.status === "success") {
         Toast.show({
@@ -349,47 +154,77 @@ const SimpleFormScreen = () => {
         text2: "Unable to submit ad. Please try again.",
       });
     }
+    setSubmitting(false);
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-      <ScrollView style={styles.container}>
-        <Text style={styles.heading}>Create Ads</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#F6F8FA" }}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" size={24} color={PRIMARY} />
+          </TouchableOpacity>
+          <Text style={styles.heading}> Create a New Ad</Text>
+        </View>
 
-        <Text style={styles.label}>Image</Text>
-        <TouchableOpacity onPress={pickImage} style={styles.imageButton}>
-          <Text style={styles.imageButtonText}>Pick Image</Text>
-        </TouchableOpacity>
-        {image && <Image source={{ uri: image }} style={styles.mainImage} />}
+        <View style={styles.card}>
+          <Text style={styles.label}>📷 Upload Image</Text>
+          <TouchableOpacity onPress={pickImage} style={styles.imageButton}>
+            <Text style={styles.imageButtonText}>Choose Image</Text>
+          </TouchableOpacity>
+          {image && <Image source={{ uri: image }} style={styles.mainImage} />}
+        </View>
 
-        <Text style={styles.label}>Payout</Text>
-        <TextInput
-          value={payout}
-          onChangeText={setPayout}
-          style={styles.input}
-          placeholder="Enter payout amount"
-          keyboardType="numeric"
-        />
-
-        <Text style={styles.label}>Valid Up To</Text>
-        <TouchableOpacity
-          onPress={() => setShowDatePicker(true)}
-          style={styles.input}
-        >
-          <Text>{validUpto.toISOString().split("T")[0]}</Text>
-        </TouchableOpacity>
-        {showDatePicker && (
-          <DateTimePicker
-            value={validUpto}
-            mode="date"
-            display="default"
-            onChange={handleDateChange}
-            minimumDate={new Date()}
+        <View style={styles.card}>
+          <Text style={styles.label}>💰 Payout (₹)</Text>
+          <TextInput
+            value={payout}
+            onChangeText={setPayout}
+            style={styles.input}
+            placeholder="Enter payout amount"
+            keyboardType="numeric"
           />
-        )}
 
-        <TouchableOpacity onPress={handleSubmit} style={styles.button}>
-          <Text style={styles.buttonText}>Submit</Text>
+          <Text style={[styles.label, { marginTop: 16 }]}>📅 Valid Until</Text>
+          <TouchableOpacity
+            onPress={() => setShowDatePicker(true)}
+            style={[styles.input, { justifyContent: "center" }]}
+          >
+            <Text style={{ color: "#333" }}>
+              {validUpto
+                ? `${validUpto.getDate().toString().padStart(2, "0")}/${(
+                    validUpto.getMonth() + 1
+                  )
+                    .toString()
+                    .padStart(2, "0")}/${validUpto.getFullYear()}`
+                : ""}
+            </Text>
+          </TouchableOpacity>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={validUpto}
+              mode="date"
+              display="default"
+              onChange={handleDateChange}
+              minimumDate={new Date()}
+            />
+          )}
+        </View>
+
+        <TouchableOpacity
+          onPress={handleSubmit}
+          style={[styles.button, submitting && { opacity: 0.6 }]}
+          disabled={submitting}
+        >
+          {submitting ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.buttonText}>Create Ad</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -400,59 +235,81 @@ const PRIMARY = "#002B5B";
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: 20,
-    backgroundColor: "#fff",
+    paddingBottom: 60,
   },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  backButton: {
+    padding: 8,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+  },
+
   heading: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: "bold",
     color: PRIMARY,
     marginBottom: 20,
+    alignSelf: "center",
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+    elevation: 3,
   },
   label: {
     fontSize: 16,
-    fontWeight: "500",
-    marginTop: 12,
-    marginBottom: 4,
+    fontWeight: "600",
+    marginBottom: 6,
     color: PRIMARY,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: "#f9f9f9",
+    borderColor: "#ddd",
+    borderRadius: 10,
+    padding: 14,
+    backgroundColor: "#FAFAFA",
   },
   imageButton: {
     backgroundColor: PRIMARY,
-    padding: 10,
-    borderRadius: 6,
+    paddingVertical: 12,
+    borderRadius: 8,
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 12,
   },
   imageButtonText: {
     color: "#fff",
     fontWeight: "600",
+    fontSize: 16,
   },
   mainImage: {
     width: "100%",
     height: 180,
     borderRadius: 10,
-    marginBottom: 10,
+    resizeMode: "cover",
+    marginTop: 10,
   },
   button: {
     backgroundColor: PRIMARY,
-    padding: 15,
-    borderRadius: 8,
-    marginTop: 25,
+    padding: 16,
+    borderRadius: 10,
     alignItems: "center",
-    marginBottom: 100,
+    marginTop: 10,
   },
   buttonText: {
     color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "700",
   },
 });
 

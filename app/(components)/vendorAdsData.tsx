@@ -1,17 +1,13 @@
-import { fetchBannerImages, fetchUserData } from "@/components/utils/api";
+import { fetchUserData } from "@/components/utils/api";
 import Feather from "@expo/vector-icons/Feather";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Asset } from "expo-asset";
-import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
-import * as Sharing from "expo-sharing";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
   Image,
-  ImageBackground,
-  Modal,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -20,9 +16,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Carousel from "react-native-reanimated-carousel";
-import { useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
+import Toast from "react-native-toast-message";
 
 const { width } = Dimensions.get("window");
 
@@ -30,22 +24,54 @@ type AdCardProps = {
   imageSrc: any;
   payout: number;
   isApprove: string; // "0" or "1"
+  id: string;
+  onDeleteSuccess: any;
 };
 
-const AdCard: React.FC<AdCardProps> = ({ imageSrc, payout, isApprove }) => {
+const AdCard: React.FC<AdCardProps> = ({
+  imageSrc,
+  payout,
+  isApprove,
+  id,
+  onDeleteSuccess,
+}) => {
   const [approved, setApproved] = useState(isApprove === "1");
 
   const handleEdit = () => {
+    router.push("/(components)/createShop");
     console.log("Edit clicked");
   };
 
-  const handleDelete = () => {
-    console.log("Delete clicked");
-  };
+  const handleDelete = async () => {
+    try {
+      const url = `https://sarvsetu.trinitycrm.in/admin/Api/package_api.php?type=delete_ads&ads_id=${id}`;
 
-  const handleApprove = () => {
-    //setApproved(true);
-    console.log("Approved");
+      const response = await fetch(url, {
+        method: "DELETE", // Use DELETE method
+      });
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        Toast.show({
+          type: "success",
+          text1: "Ad deleted successfully!",
+        });
+
+        onDeleteSuccess();
+      } else {
+        Toast.show({
+          type: "error",
+          text1: result.message || "Failed to delete ad.",
+        });
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Something went wrong while deleting the ad.",
+      });
+    }
   };
 
   return (
@@ -53,6 +79,15 @@ const AdCard: React.FC<AdCardProps> = ({ imageSrc, payout, isApprove }) => {
       <View style={styles.payoutBadge}>
         <Text style={styles.payoutText}>Payout: ₹{payout || 0}</Text>
       </View>
+      {approved ? (
+        <View style={styles.approvedBadge}>
+          <Text style={styles.badgeText}>Approved</Text>
+        </View>
+      ) : (
+        <View style={styles.pendingBadge}>
+          <Text style={styles.badgeText}>Pending</Text>
+        </View>
+      )}
 
       <Image
         source={typeof imageSrc === "string" ? { uri: imageSrc } : imageSrc}
@@ -62,10 +97,10 @@ const AdCard: React.FC<AdCardProps> = ({ imageSrc, payout, isApprove }) => {
 
       {!approved && (
         <View style={styles.buttonGroup}>
-          <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
+          {/* <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
             <Feather name="edit" size={20} color="white" style={styles.icon} />
             <Text style={styles.buttonText}>Edit</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
             <Feather
@@ -78,14 +113,6 @@ const AdCard: React.FC<AdCardProps> = ({ imageSrc, payout, isApprove }) => {
           </TouchableOpacity>
         </View>
       )}
-
-      <TouchableOpacity
-        style={[styles.approveButton, !approved ? {} : styles.disabledButton]}
-        onPress={handleApprove}
-        disabled={approved}
-      >
-        <Text style={styles.buttonText}>Approve</Text>
-      </TouchableOpacity>
     </View>
   );
 };
@@ -122,6 +149,8 @@ const App = () => {
   const [ads, setAds] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<any>(null);
+  const [remainigAds, setRemainigAds] = useState<any[]>([]);
+  const [usedAds, setUsedAds] = useState<any[]>([]);
 
   const loadData = async () => {
     try {
@@ -154,9 +183,10 @@ const App = () => {
       );
 
       const json = await response.json();
-      console.log("dashboard response:", json);
 
       if (json.status === "success" && json.message?.add_data) {
+        setRemainigAds(json.message.remaining_ads);
+        setUsedAds(json.message.used_ads);
         setAds(json.message.add_data);
       } else {
         console.warn("Invalid data format");
@@ -168,7 +198,12 @@ const App = () => {
     }
   };
 
-  console.log("dashboard response:", ads);
+  const refreshDashboard = () => {
+    if (userData?.reg_id) {
+      fetchDashboardData(userData.reg_id);
+    }
+  };
+
   if (loading || !userData) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -178,10 +213,50 @@ const App = () => {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <View style={{ flex: 1 }}>
         <Header userData={userData} />
+
+        {/* Summary Card for Total and Remaining Ads */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-around",
+
+            padding: 12,
+            marginHorizontal: 16,
+            marginBottom: 10,
+            borderRadius: 10,
+            borderWidth: 1,
+            borderColor: "#057496",
+          }}
+        >
+          <View style={{ alignItems: "center" }}>
+            <Text
+              style={{ fontSize: 16, color: "#002B5B", fontWeight: "bold" }}
+            >
+              Remaining Ads
+            </Text>
+            <Text
+              style={{ fontSize: 20, fontWeight: "bold", color: "#002B5B" }}
+            >
+              {remainigAds}
+            </Text>
+          </View>
+          <View style={{ alignItems: "center" }}>
+            <Text
+              style={{ fontSize: 16, color: "#002B5B", fontWeight: "bold" }}
+            >
+              Used Ads
+            </Text>
+            <Text
+              style={{ fontSize: 20, fontWeight: "bold", color: "#002B5B" }}
+            >
+              {usedAds}
+            </Text>
+          </View>
+        </View>
         <ScrollView
           style={styles.container}
           contentContainerStyle={{ paddingTop: 8 }}
@@ -192,6 +267,8 @@ const App = () => {
               imageSrc={ad.upload_img}
               payout={ad.payamt}
               isApprove={ad?.is_approved}
+              id={ad.ads_id}
+              onDeleteSuccess={refreshDashboard}
             />
           ))}
         </ScrollView>
@@ -213,6 +290,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
+
   initialCircle: {
     width: 40,
     height: 40,
@@ -235,6 +313,32 @@ const styles = StyleSheet.create({
   headerTextContainer: {
     flexDirection: "column",
   },
+  approvedBadge: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    backgroundColor: "#28a745",
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    borderBottomLeftRadius: 5,
+    zIndex: 1,
+  },
+  pendingBadge: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    backgroundColor: "orange",
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    borderBottomLeftRadius: 5,
+    zIndex: 1,
+  },
+  badgeText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+
   profileName: {
     fontSize: 16,
     fontWeight: "bold",

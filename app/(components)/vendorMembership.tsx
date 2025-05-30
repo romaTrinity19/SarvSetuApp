@@ -82,7 +82,7 @@ const LifetimeMembershipScreen = () => {
     });
   };
 
-  console.log("packages vendor packages", packages);
+ 
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>

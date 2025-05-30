@@ -35,7 +35,7 @@ const LifetimeMembershipScreen = () => {
         );
 
         const data = response.data;
-         console.log('data packagesfhhg', data)
+         
 
         if (
           data.status === "success" &&
@@ -80,7 +80,7 @@ const LifetimeMembershipScreen = () => {
       },
     });
   };
- console.log('user packages', packages)
+ 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       <LinearGradient colors={["#053159", "#057496"]} style={styles.container}>

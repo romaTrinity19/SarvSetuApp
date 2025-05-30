@@ -3,16 +3,20 @@ import { router } from "expo-router";
 import React from "react";
 import {
     ScrollView,
+    StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const PrivacyPolicyScreen = () => {
   const email = "noreply@adbis.com";
 
   return (
+     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+          <StatusBar barStyle="dark-content" backgroundColor="#fff" />
     <View style={styles.container}>
       <View
         style={{
@@ -168,12 +172,13 @@ const PrivacyPolicyScreen = () => {
         <Text style={styles.email}>Email: {email}</Text>
       </ScrollView>
     </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 30,
+    paddingTop: 10,
     backgroundColor: "#fff",
   },
   container2: {

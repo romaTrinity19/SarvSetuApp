@@ -52,10 +52,10 @@ export const getPackageIngfo = async (regId: string) => {
     );
 
     const json = await response.json();
-    console.log("dashboard response:", json);
+   
 
     if (json.status === "success" && json.message?.packageinfo) {
-      console.log('dataaaaaaaaaaaa',json.message?.packageinfo)
+      
       return json.message?.packageinfo; // return just the data
     } else {
       console.warn("Invalid data format");
@@ -66,3 +66,26 @@ export const getPackageIngfo = async (regId: string) => {
     return [];
   }
 };
+
+export const getPackageIngfoForUser = async (regId: string) => {
+  try {
+    const response = await fetch(
+      `https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=getpackageinfo_user&reg_id=${regId}`
+    );
+
+    const json = await response.json();
+   
+
+    if (json.status === "success" && json.message?.packageinfo) {
+      
+      return json.message?.packageinfo; // return just the data
+    } else {
+      console.warn("Invalid data format");
+      return [];
+    }
+  } catch (error) {
+    console.error("Error fetching dashboard data:", error);
+    return [];
+  }
+};
+

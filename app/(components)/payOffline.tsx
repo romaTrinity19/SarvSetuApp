@@ -6,6 +6,7 @@ import {
 } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system";
+import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import { ImagePickerAsset } from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
@@ -26,6 +27,15 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
+type PaymentData = {
+  bank_id: string;
+  qrcode: string;
+  upi_id: string;
+  upi_id2: string;
+  account_numbar: string;
+  ifsc_code: string;
+};
+
 export default function PaymentInformation() {
   const [userData, setUserData] = useState<any>(null);
   const [selectedMethod, setSelectedMethod] = useState(null);
@@ -34,6 +44,8 @@ export default function PaymentInformation() {
   const [selectedImage, setSelectedImage] = useState<ImagePickerAsset | null>(
     null
   );
+  const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
+
   const { packages } = useLocalSearchParams(); // This is a JSON string
   const [selectedPackage, setSelectedPackage] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -126,9 +138,9 @@ export default function PaymentInformation() {
           body: formData,
         }
       );
-      console.log("textResult response", response);
+
       const textResult = await response.text();
-      console.log("textResult", textResult);
+
       const json = JSON.parse(textResult);
 
       if (response.ok && json.status === "success") {
@@ -142,6 +154,7 @@ export default function PaymentInformation() {
         setSelectedImage(null);
         setSelectedMethod(null);
         setModalVisible(false);
+        router.push("/(main)/Home");
       } else {
         Toast.show({
           type: "error",
@@ -167,10 +180,23 @@ export default function PaymentInformation() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      quality: 0.8,
+      quality: 1, // Keep high quality from picker; compression is handled separately
     });
+
     if (!result.canceled) {
-      setSelectedImage(result.assets[0]);
+      const original = result.assets[0];
+
+      // 🔧 Compress and resize image
+      const compressed = await ImageManipulator.manipulateAsync(
+        original.uri,
+        [{ resize: { width: 800 } }], // Resize to 800px width (optional)
+        {
+          compress: 0.7, // Compression factor (0 to 1)
+          format: ImageManipulator.SaveFormat.JPEG,
+        }
+      );
+
+      setSelectedImage({ ...original, uri: compressed.uri }); // Use compressed URI
     }
   };
 
@@ -188,6 +214,36 @@ export default function PaymentInformation() {
     };
     loadUserData();
   }, []);
+
+  useEffect(() => {
+    const fetchPaymentDetails = async () => {
+      try {
+        const response = await fetch(
+          "https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=getpayment_details"
+        );
+        const data = await response.json();
+
+        if (data.status === "success") {
+          setPaymentData(data.message.payment_data[0]);
+        } else {
+          Toast.show({
+            type: "error",
+            text1: "Failed to fetch payment details",
+          });
+        }
+      } catch (err) {
+        Toast.show({
+          type: "error",
+          text1: "An error occurred while fetching payment details",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPaymentDetails();
+  }, []);
+  console.log("paymentData", paymentData);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
@@ -257,7 +313,12 @@ export default function PaymentInformation() {
           </TouchableOpacity>
           {selectedMethod === "qr" && (
             <View style={styles.cardContent}>
-              <Image source={qrCodeImage} style={styles.qrImage} />
+              {paymentData && (
+                <Image
+                  source={{ uri: paymentData.qrcode }}
+                  style={styles.qrImage}
+                />
+              )}
               <Text style={styles.note}>
                 Scan this code using your payment app to send your payment
                 instantly.
@@ -295,11 +356,17 @@ export default function PaymentInformation() {
           {selectedMethod === "upi" && (
             <View style={styles.cardContent}>
               <View style={styles.detailRow}>
-                <Text>yespay.bizsbiz81910@yesbankltd</Text>
+                <Text>{paymentData?.upi_id}</Text>
                 <TouchableOpacity
-                  onPress={() =>
-                    copyToClipboard("yespay.bizsbiz81910@yesbankltd")
-                  }
+                  onPress={() => copyToClipboard(paymentData?.upi_id)}
+                >
+                  <Feather name="copy" size={24} color="#000" />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.detailRow}>
+                <Text>{paymentData?.upi_id2}</Text>
+                <TouchableOpacity
+                  onPress={() => copyToClipboard(paymentData?.upi_id2)}
                 >
                   <Feather name="copy" size={24} color="#000" />
                 </TouchableOpacity>
@@ -338,17 +405,17 @@ export default function PaymentInformation() {
           {selectedMethod === "bank" && (
             <View style={styles.cardContent}>
               <View style={styles.detailRow}>
-                <Text>Ac No 074061900003583</Text>
+                <Text>Ac No - {paymentData?.account_numbar}</Text>
                 <TouchableOpacity
-                  onPress={() => copyToClipboard("074061900003583")}
+                  onPress={() => copyToClipboard(paymentData?.account_numbar)}
                 >
                   <Feather name="copy" size={24} color="#000" />
                 </TouchableOpacity>
               </View>
               <View style={styles.detailRow}>
-                <Text>IFSC Code YESB0000740</Text>
+                <Text>IFSC Code {paymentData?.ifsc_code}</Text>
                 <TouchableOpacity
-                  onPress={() => copyToClipboard("YESB0000740")}
+                  onPress={() => copyToClipboard(paymentData?.ifsc_code)}
                 >
                   <Feather name="copy" size={24} color="#000" />
                 </TouchableOpacity>
@@ -514,11 +581,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 15,
     backgroundColor: "#fff",
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+   
     zIndex: 100,
   },
   headerTitle: {

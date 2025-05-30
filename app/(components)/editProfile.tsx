@@ -20,6 +20,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+import * as ImageManipulator from "expo-image-manipulator";
+
 
 type PasswordInputProps = {
   placeholder: string;
@@ -74,28 +76,39 @@ const EditProfileScreen = () => {
   }, []);
 
   const pickImage = async () => {
-    const permissionResult =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permissionResult.granted) {
-      Toast.show({
-        type: "error",
-        text1: "Permission Required",
-        text2: "Permission to access gallery is required!",
-        position: "top",
-      });
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
+  const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!permissionResult.granted) {
+    Toast.show({
+      type: "error",
+      text1: "Permission Required",
+      text2: "Permission to access gallery is required!",
+      position: "top",
     });
+    return;
+  }
 
-    if (!result.canceled) {
-      setSelectedImage(result.assets[0]); // use asset object
-    }
-  };
+  const result = await ImagePicker.launchImageLibraryAsync({
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 1, // This affects camera capture more than picker
+  });
+
+  if (!result.canceled) {
+    const original = result.assets[0];
+ 
+    const compressed = await ImageManipulator.manipulateAsync(
+      original.uri,
+      [{ resize: { width: 800 } }],  
+      {
+        compress: 0.7, 
+        format: ImageManipulator.SaveFormat.JPEG,
+      }
+    );
+
+    setSelectedImage({ ...original, uri: compressed.uri });
+  }
+};
+
 
   const handleSave = async () => {
     if (!firstName || !lastName || !selectedState) {
@@ -201,8 +214,6 @@ const EditProfileScreen = () => {
               const formData = new FormData();
               formData.append("type", "delete_user");
               formData.append("reg_id", userData?.reg_id);
-              
-           //   console.log("deleted user reg id", userData.reg_id);
               const response = await fetch(
                 "https://sarvsetu.trinitycrm.in/admin/Api/package_api.php",
                 {
@@ -266,7 +277,6 @@ const EditProfileScreen = () => {
         setLoading(false);
       }
     };
-
     loadAndFetchUser();
   }, []);
 
