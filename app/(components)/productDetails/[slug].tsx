@@ -36,7 +36,7 @@ const ProductDetail = () => {
   } = useLocalSearchParams();
   const [showDescription, setShowDescription] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  //console.log("otherImages", otherImages);
+  
   const images = [
     require("../../../assets/images/image.jpeg"),
     require("../../../assets/images/headphone.webp"),

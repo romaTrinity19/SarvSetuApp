@@ -25,14 +25,14 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [secureText, setSecureText] = useState(true);
-  const [role, setRole] = useState("");
+  
   const navigation = useNavigation();
    const [loading, setLoading] = useState(false);
 
   const handleSignIn = async () => {
     if (loading) return; // Prevent double submission
     setLoading(true);
-    if (!email || !role || !password) {
+    if (!email ||!password) {
       Toast.show({
         type: "error",
         text1: "Missing Fields",
@@ -48,7 +48,7 @@ export default function LoginScreen() {
         {
           email: email,
           password: password,
-          role: role,
+         
           type: "login",
         },
         {
@@ -63,6 +63,7 @@ export default function LoginScreen() {
 
       if (data.status === "success") {
         await AsyncStorage.setItem("userData", JSON.stringify(data.user_data));
+       
         Toast.show({
           type: "success",
           text1: response.data.message,
@@ -125,17 +126,7 @@ export default function LoginScreen() {
           </Text>
         </View>
         <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
-          <Text style={styles.label}>Role</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={role}
-              onValueChange={(itemValue) => setRole(itemValue)}
-            >
-              <Picker.Item label="--Select Role--" value="" />
-              <Picker.Item label="User" value="user" />
-              <Picker.Item label="Vendor" value="vendor" />
-            </Picker>
-          </View>
+         
           <Text style={styles.label}>Email Address</Text>
           <TextInput
             style={styles.input}

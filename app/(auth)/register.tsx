@@ -120,12 +120,10 @@ const SignUpScreen = () => {
       );
 
       const data = response.data;
-     // console.log("response registerddfdg OTP", data);
+     
 
       if (data.status === "success") {
-      //  console.log("Response reg idddddddddddd:", data.data.reg_id);
-
-        router.push({
+      router.push({
           pathname: "/(auth)/otp",
           params: {
             email: email,
@@ -266,7 +264,7 @@ const SignUpScreen = () => {
               >
                 <Picker.Item label="--Select Role--" value="" />
                 <Picker.Item label="User" value="user" />
-                <Picker.Item label="Vendor" value="vendor" />
+                <Picker.Item label="Merchant" value="vendor" />
               </Picker>
             </View>
 
