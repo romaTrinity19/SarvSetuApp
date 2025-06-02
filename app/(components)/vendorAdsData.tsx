@@ -39,7 +39,7 @@ const AdCard: React.FC<AdCardProps> = ({
 
   const handleEdit = () => {
     router.push("/(components)/createShop");
-    console.log("Edit clicked");
+   
   };
 
   const handleDelete = async () => {

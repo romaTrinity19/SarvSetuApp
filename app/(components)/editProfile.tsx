@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 8,
-    padding: 12,
+    padding: 14,
     fontSize: 14,
   },
   inputFull: {
@@ -549,6 +549,7 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 8,
     paddingHorizontal: 10,
+    paddingVertical:5,
     marginBottom: 15,
   },
   passwordInput: {

@@ -126,10 +126,7 @@ const SimpleFormScreen = () => {
           body: formData,
         }
       );
-
-      console.log("package response", response);
       const text = await response.text();
-      console.log("package text", text);
       const result = JSON.parse(text);
 
       if (response.ok && result.status === "success") {

@@ -89,3 +89,29 @@ export const getPackageIngfoForUser = async (regId: string) => {
   }
 };
 
+// utils/fetchCMSData.ts
+export const fetchCMSData = async (column: string) => {
+  try {
+    const response = await fetch(
+      `https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=get_newdata&column=${column}`
+    );
+
+    const text = await response.text();
+    // Now parse JSON safely
+    const data = JSON.parse(text);
+
+    if (data.status === "success") {
+      const html = data.message[column]?.[0] || ""; // safer extraction with your column
+      return { success: true, data: html };
+    } else {
+      return { success: false, error: "Failed to fetch data" };
+    }
+  } catch (error) {
+    console.error("Error fetching dashboard data:", error);
+    return { success: false, error: "An error occurred while fetching data" };
+  }
+};
+
+
+
+

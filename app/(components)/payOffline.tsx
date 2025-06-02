@@ -49,6 +49,7 @@ export default function PaymentInformation() {
   const { packages } = useLocalSearchParams(); // This is a JSON string
   const [selectedPackage, setSelectedPackage] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  
 
   useEffect(() => {
     if (typeof packages === "string") {
@@ -62,7 +63,7 @@ export default function PaymentInformation() {
   }, [packages]);
 
   const qrCodeImage = require("../../assets/images/react-logo.png"); // Replace with your actual QR image
-
+console.log('paymentData', paymentData)
   const handleSelect = (method: any) => {
     setSelectedMethod(selectedMethod === method ? null : method);
   };
@@ -243,7 +244,7 @@ export default function PaymentInformation() {
 
     fetchPaymentDetails();
   }, []);
-  console.log("paymentData", paymentData);
+ 
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
