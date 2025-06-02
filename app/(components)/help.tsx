@@ -1,6 +1,6 @@
 // app/(components)/UniversalVideoPlayer.tsx
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -8,13 +8,19 @@ import {
   SafeAreaView,
   Text,
   ActivityIndicator,
+  useWindowDimensions,
 } from "react-native";
 import { Video, ResizeMode } from "expo-av";
 import { WebView } from "react-native-webview";
 import { StatusBar } from "react-native";
+import { fetchCMSData } from "@/components/utils/api";
+import Toast from "react-native-toast-message";
 
 const UniversalVideoPlayer = () => {
-  const url = "https://www.youtube.com/watch?v=aqz-KE-bpKQ";
+  const [loading, setLoading] = useState(false);
+  const [Data, setData] = useState<any>(null);
+
+  const url =Data;
 
   const isYouTubeUrl = (urlString: string) =>
     urlString.includes("youtube.com") || urlString.includes("youtu.be");
@@ -37,6 +43,26 @@ const UniversalVideoPlayer = () => {
   const parsedUrl = typeof url === "string" ? url : "";
 
   const youTubeEmbedUrl = getEmbedUrl(parsedUrl);
+
+  const { width } = useWindowDimensions();
+
+  useEffect(() => {
+    const loadContent = async () => {
+      const result = await fetchCMSData("help");
+
+      if (result.success) {
+        // Remove data-* attributes like data-start, data-end etc.
+        const cleanHTML = result.data.replace(/ data-[a-zA-Z-]+="[^"]*"/g, "");
+        setData(cleanHTML);
+      } else {
+        Toast.show({ type: "error", text1: result.error });
+      }
+    };
+
+    loadContent();
+  }, []);
+
+ 
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>

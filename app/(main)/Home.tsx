@@ -9,7 +9,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Asset } from "expo-asset";
 import { router, useFocusEffect, useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -48,8 +48,23 @@ const AdCard: React.FC<AdCardProps> = ({ imageSrc, payout, userData, id }) => {
       .catch((err) => console.error("Failed to fetch package info", err));
   }
 
-  const isSubscribed = packageInfo[0]?.is_approved == 1;
+  const hasFetched = useRef(false);
 
+useFocusEffect(
+  useCallback(() => {
+    if (userData?.reg_id && !hasFetched.current) {
+      hasFetched.current = true;
+
+      getPackageIngfoForUser(userData.reg_id)
+        .then((res) => setPackageInfo(res))
+        .catch((err) => console.error("Failed to fetch package info", err));
+    }
+  }, [userData?.reg_id])
+);
+
+
+  const isSubscribed = packageInfo[0]?.is_approved == 1;
+ 
   const shareImageOnWhatsApp = async () => {
     try {
       const asset = Asset.fromModule(imageSrc);
@@ -213,7 +228,7 @@ const VendorWelcomeScreen = ({ userData }: { userData: any }) => {
     banners.forEach((url) => {
       Image.prefetch(url);
     });
-    console.log("packageInfo v packageInfo", packageInfo);
+     
   }, [banners]);
 
   if (loading) {

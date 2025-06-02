@@ -84,13 +84,6 @@ const AccountScreen = () => {
       });
   }
 
-  useEffect(() => {
-    console.log(
-      "packageInfoUser[0]?.is_approved ",
-      packageInfoUser[0]?.is_approved
-    );
-  }, []);
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
@@ -171,7 +164,7 @@ const AccountScreen = () => {
           <MenuItem
             title="Help"
             subtitle="Learn Easily with Video Guides"
-            route="/(components)/franchise"
+            route="/(components)/help"
           />
           <MenuItem
             title="Contact Us"
@@ -183,11 +176,12 @@ const AccountScreen = () => {
             <Text style={styles.logoutText}>Log out</Text>
           </TouchableOpacity>
 
-          <View style={styles.socialContainer}>
+          {/* <View style={styles.socialContainer}>
             <FontAwesome name="instagram" size={24} style={styles.socialIcon} />
             <Entypo name="facebook" size={24} style={styles.socialIcon} />
             <Ionicons name="logo-twitter" size={24} style={styles.socialIcon} />
-          </View>
+          </View> */}
+          
         </ScrollView>
       </View>
     </SafeAreaView>
