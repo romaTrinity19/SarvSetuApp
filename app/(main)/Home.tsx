@@ -13,6 +13,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
+  FlatList,
   Image,
   ImageBackground,
   Modal,
@@ -21,7 +22,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import Carousel from "react-native-reanimated-carousel";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -48,23 +49,22 @@ const AdCard: React.FC<AdCardProps> = ({ imageSrc, payout, userData, id }) => {
       .catch((err) => console.error("Failed to fetch package info", err));
   }
 
-  const hasFetched = useRef(false);
+  // const hasFetched = useRef(false);
 
-useFocusEffect(
-  useCallback(() => {
-    if (userData?.reg_id && !hasFetched.current) {
-      hasFetched.current = true;
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     if (userData?.reg_id && !hasFetched.current) {
+  //       hasFetched.current = true;
 
-      getPackageIngfoForUser(userData.reg_id)
-        .then((res) => setPackageInfo(res))
-        .catch((err) => console.error("Failed to fetch package info", err));
-    }
-  }, [userData?.reg_id])
-);
-
+  //       getPackageIngfoForUser(userData.reg_id)
+  //         .then((res) => setPackageInfo(res))
+  //         .catch((err) => console.error("Failed to fetch package info", err));
+  //     }
+  //   }, [userData?.reg_id])
+  // );
 
   const isSubscribed = packageInfo[0]?.is_approved == 1;
- 
+  
   const shareImageOnWhatsApp = async () => {
     try {
       const asset = Asset.fromModule(imageSrc);
@@ -85,7 +85,7 @@ useFocusEffect(
       console.error("Error sharing image:", error);
     }
   };
-
+  
   return (
     <View style={styles.card}>
       <View style={styles.payoutBadge}>
@@ -228,7 +228,6 @@ const VendorWelcomeScreen = ({ userData }: { userData: any }) => {
     banners.forEach((url) => {
       Image.prefetch(url);
     });
-     
   }, [banners]);
 
   if (loading) {
@@ -236,6 +235,7 @@ const VendorWelcomeScreen = ({ userData }: { userData: any }) => {
   }
 
   return (
+    <ScrollView contentContainerStyle={{ paddingBottom: 60 }}> 
     <View
       style={{
         flex: 1,
@@ -302,12 +302,16 @@ const VendorWelcomeScreen = ({ userData }: { userData: any }) => {
                 </TouchableOpacity>
               )}
 
-            <TouchableOpacity
-              style={[styles.buttonPrimary, { marginTop: 12 }]}
-              onPress={() => router.push("/(components)/createShop")}
-            >
-              <Text style={styles.buttonText2}>⚙️ Create Ads</Text>
-            </TouchableOpacity>
+            {packageInfo[0].remaining_ads > "0" && (
+              <TouchableOpacity
+                style={[styles.buttonPrimary, { marginTop: 12 }]}
+                onPress={() => router.push("/(components)/createShop")}
+              >
+                <Text style={styles.buttonText2}>
+                  ⚙️ Create Ads  
+                </Text>
+              </TouchableOpacity>
+            )}
 
             <TouchableOpacity
               style={[styles.buttonSecondary, { marginTop: 10 }]}
@@ -337,6 +341,7 @@ const VendorWelcomeScreen = ({ userData }: { userData: any }) => {
         )}
       </View>
     </View>
+    </ScrollView>
   );
 };
 
@@ -432,25 +437,30 @@ const App = () => {
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <View style={{ flex: 1 }}>
         <Header userData={userData} />
-        <ScrollView
-          style={styles.container}
-          contentContainerStyle={{ paddingTop: 8 }}
-        >
-          {userData.role === "user" ? (
-            ads?.map((ad) => (
+        {userData.role === "user" ? (
+          <FlatList
+            data={ads}
+            keyExtractor={(item) => item.ads_id.toString()}
+            renderItem={({ item }) => (
               <AdCard
-                key={ad.ads_id}
-                imageSrc={ad.imagepath}
-                payout={ad.payamt}
-                subscription={ad?.is_subscribe}
+                imageSrc={item.imagepath}
+                payout={item.payamt}
+                subscription={item?.is_subscribe}
                 userData={userData}
-                id={ad.ads_id}
+                id={item.ads_id}
               />
-            ))
-          ) : (
-            <VendorWelcomeScreen userData={userData} />
-          )}
-        </ScrollView>
+            )}
+            contentContainerStyle={{ paddingTop: 8, paddingBottom: 80 }}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <Text style={{ textAlign: "center", marginTop: 20 }}>
+                No Ads Available
+              </Text>
+            }
+          />
+        ) : (
+          <VendorWelcomeScreen userData={userData} />
+        )}
       </View>
     </SafeAreaView>
   );

@@ -17,7 +17,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 const AboutUsScreen = ({}) => {
- 
   const [Data, setData] = useState<any>(null);
 
   const { width } = useWindowDimensions();
@@ -37,8 +36,7 @@ const AboutUsScreen = ({}) => {
 
     loadContent();
   }, []);
- 
-   
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
@@ -72,8 +70,13 @@ const AboutUsScreen = ({}) => {
               tagsStyles={{
                 h2: { fontSize: 20, fontWeight: "bold", marginBottom: 10 },
                 h3: { fontSize: 18, fontWeight: "600", marginBottom: 6 },
-                p: { fontSize: 14, lineHeight: 22, marginBottom: 8 },
-                li: { marginBottom: 6 },
+                p: {
+                  fontSize: 14,
+                  lineHeight: 22,
+                  marginBottom: 8,
+                  textAlign: "justify",
+                },
+                li: { marginBottom: 6, textAlign: "justify" },
               }}
             />
           ) : (

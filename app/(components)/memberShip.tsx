@@ -2,6 +2,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   ScrollView,
   StyleSheet,
@@ -35,7 +36,6 @@ const LifetimeMembershipScreen = () => {
         );
 
         const data = response.data;
-         
 
         if (
           data.status === "success" &&
@@ -80,7 +80,7 @@ const LifetimeMembershipScreen = () => {
       },
     });
   };
- 
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       <LinearGradient colors={["#053159", "#057496"]} style={styles.container}>
@@ -116,7 +116,8 @@ const LifetimeMembershipScreen = () => {
             <View style={styles.priceRow1}>
               <Text style={styles.label}>Select Your Prime Membership</Text>
               <Text style={styles.motivationalText}>
-              🎁 Every plan comes with powerful perks — select your package 🌟 and level up!🚀 
+                🎁 Every plan comes with powerful perks — select your package 🌟
+                and level up!🚀
               </Text>
             </View>
             <Image
@@ -129,31 +130,53 @@ const LifetimeMembershipScreen = () => {
           <View style={styles.horizontalLine} />
 
           <View style={styles.packageList}>
-            {packages?.map((pkg) => (
-              <TouchableOpacity
-                key={pkg.amount}
-                style={[
-                  styles.packageItem,
-                  selectedPackage?.amount === pkg.amount &&
-                    styles.selectedPackage,
-                ]}
-                onPress={() => setSelectedPackage(pkg)}
+            {loading ? (
+              <View
+                style={{
+                  flex: 1,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  paddingVertical: 20,
+                }}
               >
-                <Text
+                <ActivityIndicator size="large" color="#fff" />
+              </View>
+            ) : packages?.length > 0 ? (
+              packages.map((pkg) => (
+                <TouchableOpacity
+                  key={pkg.amount}
                   style={[
-                    styles.packageText,
+                    styles.packageItem,
                     selectedPackage?.amount === pkg.amount &&
-                      styles.selectedPackageText,
+                      styles.selectedPackage,
                   ]}
+                  onPress={() => setSelectedPackage(pkg)}
                 >
-                  ₹ {pkg.amount} - {pkg.in_month} month {pkg.package_name}{" "}
-                  Package
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[
+                      styles.packageText,
+                      selectedPackage?.amount === pkg.amount &&
+                        styles.selectedPackageText,
+                    ]}
+                  >
+                    ₹ {pkg.amount} - {pkg.in_month} month {pkg.package_name}{" "}
+                    Package
+                  </Text>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <Text
+                style={{
+                  textAlign: "center",
+                  color: "gray",
+                  paddingVertical: 20,
+                }}
+              >
+                No packages available.
+              </Text>
+            )}
           </View>
 
-         
           <TouchableOpacity
             style={styles.payOfflineBtn}
             onPress={handlePayOffline}

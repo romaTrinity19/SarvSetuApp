@@ -1,8 +1,8 @@
 import { fetchUserData } from "@/components/utils/api";
 import Feather from "@expo/vector-icons/Feather";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -39,7 +39,6 @@ const AdCard: React.FC<AdCardProps> = ({
 
   const handleEdit = () => {
     router.push("/(components)/createShop");
-   
   };
 
   const handleDelete = async () => {
@@ -174,6 +173,14 @@ const App = () => {
     }
   }, [userData]);
 
+  useFocusEffect(
+    useCallback(() => {
+      if (userData?.reg_id) {
+        fetchDashboardData(userData.reg_id);
+      }
+    }, [userData?.reg_id])
+  );
+
   const fetchDashboardData = async (regId: string) => {
     try {
       const response = await fetch(
@@ -203,6 +210,7 @@ const App = () => {
       fetchDashboardData(userData.reg_id);
     }
   };
+  
 
   if (loading || !userData) {
     return (
@@ -266,7 +274,7 @@ const App = () => {
               key={ad.ads_id}
               imageSrc={ad.upload_img}
               payout={ad.payamt}
-              isApprove={ad?.is_approved}
+              isApprove={ad?.status}
               id={ad.ads_id}
               onDeleteSuccess={refreshDashboard}
             />

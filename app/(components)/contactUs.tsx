@@ -22,12 +22,6 @@ const ContactUs = () => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // const handleSubmit = () => {
-  //   // Handle submit logic here
-  //   console.log({ fullName, email, phone, subject, message });
-  // };
-
-
 const handleSubmit = async () => {
   if (!fullName || !email || !phone || !subject || !message) {
     Toast.show({

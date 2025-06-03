@@ -33,7 +33,7 @@ const AccountScreen = () => {
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem("userData"); // userData ko local storage se hatao
-      router.push("/(auth)/login"); // login screen pe redirect karo
+      router.replace("/(auth)/login"); // login screen pe redirect karo
     } catch (error) {
       console.error("Failed to logout:", error);
     }

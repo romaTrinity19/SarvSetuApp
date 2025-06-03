@@ -63,7 +63,7 @@ export default function PaymentInformation() {
   }, [packages]);
 
   const qrCodeImage = require("../../assets/images/react-logo.png"); // Replace with your actual QR image
-console.log('paymentData', paymentData)
+ 
   const handleSelect = (method: any) => {
     setSelectedMethod(selectedMethod === method ? null : method);
   };
@@ -245,7 +245,7 @@ console.log('paymentData', paymentData)
     fetchPaymentDetails();
   }, []);
  
-
+ 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
@@ -282,7 +282,7 @@ console.log('paymentData', paymentData)
           </Text>
         </View>
 
-        <Text style={styles.pageTitle}>Payment Information</Text>
+        <Text style={styles.pageTitle}>Payment Information </Text>
         <Text style={styles.pageSub}>
           Choose any method below to complete your payment.
         </Text>
