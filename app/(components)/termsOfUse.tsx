@@ -26,7 +26,6 @@ const AboutUsScreen = ({}) => {
       const result = await fetchCMSData("term_condition");
 
       if (result.success) {
-        // Remove data-* attributes like data-start, data-end etc.
         const cleanHTML = result.data.replace(/ data-[a-zA-Z-]+="[^"]*"/g, "");
         setData(cleanHTML);
       } else {
@@ -70,8 +69,13 @@ const AboutUsScreen = ({}) => {
               tagsStyles={{
                 h2: { fontSize: 20, fontWeight: "bold", marginBottom: 10 },
                 h3: { fontSize: 18, fontWeight: "600", marginBottom: 6 },
-                p: { fontSize: 14, lineHeight: 22, marginBottom: 8 },
-                li: { marginBottom: 6 },
+                p: {
+                  fontSize: 14,
+                  lineHeight: 22,
+                  marginBottom: 8,
+                  textAlign: "justify",
+                },
+                li: { marginBottom: 6, textAlign: "justify" },
               }}
             />
           ) : (

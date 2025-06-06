@@ -49,7 +49,6 @@ export default function PaymentInformation() {
   const { packages } = useLocalSearchParams(); // This is a JSON string
   const [selectedPackage, setSelectedPackage] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  
 
   useEffect(() => {
     if (typeof packages === "string") {
@@ -63,7 +62,7 @@ export default function PaymentInformation() {
   }, [packages]);
 
   const qrCodeImage = require("../../assets/images/react-logo.png"); // Replace with your actual QR image
-console.log('paymentData', paymentData)
+
   const handleSelect = (method: any) => {
     setSelectedMethod(selectedMethod === method ? null : method);
   };
@@ -244,7 +243,6 @@ console.log('paymentData', paymentData)
 
     fetchPaymentDetails();
   }, []);
- 
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
@@ -282,7 +280,7 @@ console.log('paymentData', paymentData)
           </Text>
         </View>
 
-        <Text style={styles.pageTitle}>Payment Information</Text>
+        <Text style={styles.pageTitle}>Payment Information </Text>
         <Text style={styles.pageSub}>
           Choose any method below to complete your payment.
         </Text>
@@ -448,6 +446,7 @@ console.log('paymentData', paymentData)
               value={transactionId}
               onChangeText={setTransactionId}
               placeholder="Enter Transaction ID"
+              placeholderTextColor="#555"
               style={styles.textInput}
             />
             <TouchableOpacity style={styles.uploadButton} onPress={pickImage}>
@@ -568,6 +567,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     padding: 10,
     marginBottom: 16,
+    color: "#000",
   },
   pageTitle: {
     fontSize: 22,
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 15,
     backgroundColor: "#fff",
-   
+
     zIndex: 100,
   },
   headerTitle: {

@@ -112,6 +112,34 @@ export const fetchCMSData = async (column: string) => {
   }
 };
 
+export const fetchShopServices = async () => {
+  try {
+    const response = await axios.get('https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=shopservice');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching shop services:', error);
+    throw error;
+  }
+};
+
+
+export const fetchShopServiceDetail = async (service_id: string) => {
+  try {
+    const response = await axios.get(
+      `https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php`,
+      {
+        params: {
+          type: 'shopservicedetail',
+          service_id,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching shop service detail:', error);
+    throw error;
+  }
+};
 
 
 

@@ -25,21 +25,21 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [secureText, setSecureText] = useState(true);
-  
+
   const navigation = useNavigation();
-   const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleSignIn = async () => {
     if (loading) return; // Prevent double submission
     setLoading(true);
-    if (!email ||!password) {
+    if (!email || !password) {
       Toast.show({
         type: "error",
         text1: "Missing Fields",
         text2: "Please fill out all required fields.",
         position: "top",
       });
-        setLoading(false);
+      setLoading(false);
       return;
     }
     try {
@@ -48,7 +48,7 @@ export default function LoginScreen() {
         {
           email: email,
           password: password,
-         
+
           type: "login",
         },
         {
@@ -59,11 +59,10 @@ export default function LoginScreen() {
       );
 
       const data = response.data;
-     
 
       if (data.status === "success") {
         await AsyncStorage.setItem("userData", JSON.stringify(data.user_data));
-       
+
         Toast.show({
           type: "success",
           text1: response.data.message,
@@ -85,118 +84,124 @@ export default function LoginScreen() {
       }
       Toast.show({
         type: "error",
-        text1:  error.response?.data?.message ||
-          "Something went wrong. Please try again.", 
-        text2:
-         "Login Failed",
+        text1:
+          error.response?.data?.message ||
+          "Something went wrong. Please try again.",
+        text2: "Login Failed",
         position: "top",
       });
-    }finally {
-    setLoading(false);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-       <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0} // adjust as needed
-        > 
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-          >
-            <Feather name="arrow-left" size={24} color="#fff" />
-          </TouchableOpacity>
-
-          <Text style={styles.heading}>Sign in to your{"\n"}Account</Text>
-
-          <Text style={styles.subHeading}>
-            Dont have an account?{" "}
-            <Text
-              style={styles.link2}
-              onPress={() => router.push("/(auth)/register")}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0} // adjust as needed
+      >
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
             >
-              Sign Up
-            </Text>
-          </Text>
-        </View>
-        <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
-         
-          <Text style={styles.label}>Email Address</Text>
-          <TextInput
-            style={styles.input}
-            placeholder=""
-            value={email}
-            onChangeText={setEmail}
-          />
+              <Feather name="arrow-left" size={24} color="#fff" />
+            </TouchableOpacity>
 
-          <Text style={styles.label}>Password</Text>
-          <View style={styles.passwordContainer}>
+            <Text style={styles.heading}>Sign in to your{"\n"}Account</Text>
+
+            <Text style={styles.subHeading}>
+              Dont have an account?{" "}
+              <Text
+                style={styles.link2}
+                onPress={() => router.push("/(auth)/register")}
+              >
+                Sign Up
+              </Text>
+            </Text>
+          </View>
+          <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
+            <Text style={styles.label}>Email Address</Text>
             <TextInput
-              style={{ flex: 1 }}
+              style={styles.input}
               placeholder=""
-              secureTextEntry={secureText}
-              value={password}
-              onChangeText={setPassword}
+               placeholderTextColor="#555"
+              value={email}
+              onChangeText={setEmail}
             />
-            <TouchableOpacity onPress={() => setSecureText(!secureText)}>
-              <Feather
-                name={secureText ? "eye-off" : "eye"}
-                size={20}
-                color="#aaa"
+
+            <Text style={styles.label}>Password</Text>
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={{ flex: 1 }}
+                placeholder=""
+                 placeholderTextColor="#555"
+                secureTextEntry={secureText}
+                value={password}
+                onChangeText={setPassword}
               />
+              <TouchableOpacity onPress={() => setSecureText(!secureText)}>
+                <Feather
+                  name={secureText ? "eye-off" : "eye"}
+                  size={20}
+                  color="#aaa"
+                />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.row}>
+              <TouchableOpacity
+                onPress={() => setRememberMe(!rememberMe)}
+                style={{ flexDirection: "row", alignItems: "center" }}
+              >
+                <Feather
+                  name={rememberMe ? "check-square" : "square"}
+                  size={24}
+                  color={rememberMe ? "#002B5B" : "#ccc"}
+                />
+                <Text style={{ marginLeft: 8 }}>Remember me</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.forgotPassword}
+                onPress={() => router.push("/(auth)/forgotPassword")}
+              >
+                <Text style={styles.link}>Forgot Password?</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity style={styles.loginButton} onPress={handleSignIn}>
+              {loading ? (
+                <ActivityIndicator size="large" color="#fff" />
+              ) : (
+                <Text style={styles.loginText}>Log In</Text>
+              )}
             </TouchableOpacity>
-          </View>
 
-          <View style={styles.row}>
-            <TouchableOpacity
-              onPress={() => setRememberMe(!rememberMe)}
-              style={{ flexDirection: "row", alignItems: "center" }}
-            >
-              <Feather
-                name={rememberMe ? "check-square" : "square"}
-                size={24}
-                color={rememberMe ? "#002B5B" : "#ccc"}
-              />
-              <Text style={{ marginLeft: 8 }}>Remember me</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.forgotPassword}
-              onPress={() => router.push("/(auth)/forgotPassword")}
-            >
-              <Text style={styles.link}>Forgot Password?</Text>
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity style={styles.loginButton} onPress={handleSignIn}>
-             {loading ? <ActivityIndicator size="large" color="#fff" />:   <Text style={styles.loginText}>Log In</Text> }
-           
-          </TouchableOpacity>
-
-          <Text style={styles.footerText}>
-            By signing up, you agree to the{" "}
-            <Text
-              style={styles.link}
-              onPress={() => router.push("/(components)/termsOfUse")}
-            >
-              Terms Of Use
-            </Text>{" "}
-            and{" "}
-            <Text
-              style={styles.link}
-              onPress={() => router.push("/(components)/dataDeletetionPolicy")}
-            >
-              Data Deletion Policy
+            <Text style={styles.footerText}>
+              By signing up, you agree to the{" "}
+              <Text
+                style={styles.link}
+                onPress={() => router.push("/(components)/termsOfUse")}
+              >
+                Terms Of Use
+              </Text>{" "}
+              and{" "}
+              <Text
+                style={styles.link}
+                onPress={() =>
+                  router.push("/(components)/dataDeletetionPolicy")
+                }
+              >
+                Data Deletion Policy
+              </Text>
             </Text>
-          </Text>
+          </View>
         </View>
-      </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -257,6 +262,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 15,
     marginBottom: 15,
+     color: "black"
   },
   passwordContainer: {
     flexDirection: "row",

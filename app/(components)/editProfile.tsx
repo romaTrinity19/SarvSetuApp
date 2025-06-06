@@ -8,6 +8,7 @@ import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Image,
   ScrollView,
@@ -22,10 +23,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import * as ImageManipulator from "expo-image-manipulator";
 
-
 type PasswordInputProps = {
   placeholder: string;
   value: string;
+   placeholderTextColor:string
   onChangeText: (text: string) => void;
   show: boolean;
   toggleShow: () => void;
@@ -76,39 +77,39 @@ const EditProfileScreen = () => {
   }, []);
 
   const pickImage = async () => {
-  const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!permissionResult.granted) {
-    Toast.show({
-      type: "error",
-      text1: "Permission Required",
-      text2: "Permission to access gallery is required!",
-      position: "top",
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Toast.show({
+        type: "error",
+        text1: "Permission Required",
+        text2: "Permission to access gallery is required!",
+        position: "top",
+      });
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1, // This affects camera capture more than picker
     });
-    return;
-  }
 
-  const result = await ImagePicker.launchImageLibraryAsync({
-    allowsEditing: true,
-    aspect: [1, 1],
-    quality: 1, // This affects camera capture more than picker
-  });
+    if (!result.canceled) {
+      const original = result.assets[0];
 
-  if (!result.canceled) {
-    const original = result.assets[0];
- 
-    const compressed = await ImageManipulator.manipulateAsync(
-      original.uri,
-      [{ resize: { width: 800 } }],  
-      {
-        compress: 0.7, 
-        format: ImageManipulator.SaveFormat.JPEG,
-      }
-    );
+      const compressed = await ImageManipulator.manipulateAsync(
+        original.uri,
+        [{ resize: { width: 800 } }],
+        {
+          compress: 0.7,
+          format: ImageManipulator.SaveFormat.JPEG,
+        }
+      );
 
-    setSelectedImage({ ...original, uri: compressed.uri });
-  }
-};
-
+      setSelectedImage({ ...original, uri: compressed.uri });
+    }
+  };
 
   const handleSave = async () => {
     if (!firstName || !lastName || !selectedState) {
@@ -280,6 +281,21 @@ const EditProfileScreen = () => {
     loadAndFetchUser();
   }, []);
 
+  if (loading) {
+    return (
+      <SafeAreaView
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#fff",
+        }}
+      >
+        <ActivityIndicator size="large" color="#002244" />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
@@ -330,28 +346,38 @@ const EditProfileScreen = () => {
           </View>
 
           <View style={styles.row}>
-            <TextInput
-              style={styles.input}
-              placeholder="First Name"
-              value={firstName}
-              onChangeText={setFirstName}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Last Name"
-              value={lastName}
-              onChangeText={setLastName}
-            />
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>First Name</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="First Name"
+                 placeholderTextColor="#555"
+                value={firstName}
+                onChangeText={setFirstName}
+              />
+            </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Last Name</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Last Name"
+                 placeholderTextColor="#555"
+                value={lastName}
+                onChangeText={setLastName}
+              />
+            </View>
           </View>
-
+          <Text style={styles.label}>Email Address</Text>
           <TextInput
             style={styles.inputFull}
             placeholder="Email Address"
+             placeholderTextColor="#555"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             editable={false}
           />
+          <Text style={styles.label}>Phone Number</Text>
 
           <View style={styles.row}>
             <TextInput
@@ -367,6 +393,7 @@ const EditProfileScreen = () => {
               editable={false}
             />
           </View>
+          <Text style={styles.label}>State</Text>
           <View style={styles.pickerWrapper}>
             <Picker
               selectedValue={selectedState}
@@ -384,8 +411,10 @@ const EditProfileScreen = () => {
           </View>
           <Text style={styles.sectionHeader}>Change Password</Text>
 
+          <Text style={styles.label}>Old Password</Text>
           <PasswordInput
             placeholder="Old Password"
+             placeholderTextColor="#555"
             value={oldPassword}
             onChangeText={setOldPassword}
             show={showPassword.old}
@@ -393,8 +422,11 @@ const EditProfileScreen = () => {
               setShowPassword({ ...showPassword, old: !showPassword.old })
             }
           />
+
+          <Text style={styles.label}>New Password</Text>
           <PasswordInput
             placeholder="New Password"
+             placeholderTextColor="#555"
             value={newPassword}
             onChangeText={setNewPassword}
             show={showPassword.new}
@@ -402,8 +434,10 @@ const EditProfileScreen = () => {
               setShowPassword({ ...showPassword, new: !showPassword.new })
             }
           />
+          <Text style={styles.label}>Confirm New Password</Text>
           <PasswordInput
             placeholder="Confirm New Password"
+              placeholderTextColor="#555"
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             show={showPassword.confirm}
@@ -430,6 +464,7 @@ const EditProfileScreen = () => {
 
 const PasswordInput: React.FC<PasswordInputProps> = ({
   placeholder,
+   placeholderTextColor,
   value,
   onChangeText,
   show,
@@ -442,6 +477,7 @@ const PasswordInput: React.FC<PasswordInputProps> = ({
       secureTextEntry={!show}
       value={value}
       onChangeText={onChangeText}
+       placeholderTextColor={placeholderTextColor}
     />
     <TouchableOpacity onPress={toggleShow}>
       <Ionicons name={show ? "eye-off" : "eye"} size={20} color="gray" />
@@ -453,6 +489,13 @@ const styles = StyleSheet.create({
   container2: {
     backgroundColor: "#fff",
     paddingTop: 10,
+  },
+  label: {
+    marginBottom: 5,
+  },
+  inputContainer: {
+    flex: 1,
+    marginRight: 4,
   },
   container: {
     paddingHorizontal: 16,
@@ -513,6 +556,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 14,
     fontSize: 14,
+    color: "black",
   },
   inputFull: {
     width: "100%",
@@ -522,6 +566,7 @@ const styles = StyleSheet.create({
     padding: 15,
     fontSize: 14,
     marginBottom: 15,
+    color:'#000'
   },
   pickerWrapper: {
     flex: 1,
@@ -549,7 +594,7 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 8,
     paddingHorizontal: 10,
-    paddingVertical:5,
+    paddingVertical: 5,
     marginBottom: 15,
   },
   passwordInput: {

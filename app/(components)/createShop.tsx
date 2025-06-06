@@ -182,6 +182,7 @@ const SimpleFormScreen = () => {
             onChangeText={setPayout}
             style={styles.input}
             placeholder="Enter payout amount"
+             placeholderTextColor="#555"
             keyboardType="numeric"
           />
 
@@ -276,6 +277,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 14,
     backgroundColor: "#FAFAFA",
+    color:'black'
   },
   imageButton: {
     backgroundColor: PRIMARY,

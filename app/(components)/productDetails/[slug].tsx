@@ -1,54 +1,73 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-  Modal,
-  Dimensions,
-  LayoutAnimation,
-  ImageSourcePropType,
-  Share,
-  Linking,
-} from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { fetchShopServiceDetail } from "@/components/utils/api";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
 import * as FileSystem from "expo-file-system";
 import * as MediaLibrary from "expo-media-library";
-import { Platform } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import { decode } from "html-entities";
+import React, { useEffect, useState } from "react";
+
+import {
+  ActivityIndicator,
+  Dimensions,
+  Image,
+  ImageSourcePropType,
+  Linking,
+  Modal,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import RenderHTML from "react-native-render-html";
+import { SafeAreaView } from "react-native-safe-area-context";
+type ShopServiceDetail = {
+  service_id: string;
+  shop_name: string;
+  mobile: string;
+  whatsapp_no: string;
+  main_image: string;
+  map_link: string;
+  status: string;
+  description: string;
+  createdby: string;
+  ipaddress: string;
+  createdate: string;
+  lastupdated: string;
+  images: string[];
+};
+
+type ShopService = {
+  service_id: string;
+  shop_name: string;
+  mobile: string;
+  whatsapp_no: string;
+  upload_service_img: string;
+  map_link: string;
+  status: string;
+  description: string;
+  imagepath: string;
+};
 const ProductDetail = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<
     ImageSourcePropType | undefined
   >(undefined);
-  const {
-    name,
-    price,
-    originalPrice,
-    image,
-    otherImages,
-    phoneNumber,
-    whatsappNumber,
-    website,
-  } = useLocalSearchParams();
-  const [showDescription, setShowDescription] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  
-  const images = [
-    require("../../../assets/images/image.jpeg"),
-    require("../../../assets/images/headphone.webp"),
-    require("../../../assets/images/image.jpeg"),
-    require("../../../assets/images/image.jpeg"),
-    require("../../../assets/images/image.jpeg"),
-    require("../../../assets/images/image.jpeg"),
-  ];
+  const [services, setServices] = useState<ShopServiceDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const { serviceId } = useLocalSearchParams();
+  const { width } = useWindowDimensions();
+
+  const decodedHtml = decode(services?.description || "");
 
   const handleScroll = (event: any) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
-    const index = Math.round(contentOffsetX / screenWidth);
+    const index = Math.round(contentOffsetX / Dimensions.get("window").width);
     setCurrentIndex(index);
   };
 
@@ -56,65 +75,32 @@ const ProductDetail = () => {
     setSelectedImage(image);
     setModalVisible(true);
   };
-  const toggleDescription = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setShowDescription(!showDescription);
-  };
-
-  // const handleShare = async () => {
-  //   try {
-  //     const result = await Share.share({
-  //       message:
-  //         "Check out this product: Adbiz Unisex Facial Hair Remover – 30-Min Cordless Trimmer! ₹499 only. Buy now!",
-  //     });
-
-  //     // Optional: handle result
-  //     if (result.action === Share.sharedAction) {
-  //       if (result.activityType) {
-  //         // shared with activity type
-  //       } else {
-  //         // shared
-  //       }
-  //     } else if (result.action === Share.dismissedAction) {
-  //       // dismissed
-  //     }
-  //   } catch (error) {
-  //     if (error instanceof Error) {
-  //       alert("Error sharing: " + error.message);
-  //     } else {
-  //       alert("An unknown error occurred during sharing.");
-  //     }
-  //   }
-  // };
 
   const handleCall = () => {
-    if (phoneNumber) Linking.openURL(`tel:${phoneNumber}`);
+    if (services?.mobile) Linking.openURL(`tel:${services.mobile}`);
   };
 
   const handleVisit = () => {
-    if (Array.isArray(website)) {
-      Linking.openURL(website[0]); // Use the first URL if it's an array
-    } else if (typeof website === "string") {
-      Linking.openURL(website);
-    }
+    if (services?.map_link) Linking.openURL(services.map_link);
   };
 
   const handleWhatsApp = () => {
-    if (whatsappNumber) Linking.openURL(`https://wa.me/${whatsappNumber}`);
+    if (services?.whatsapp_no)
+      Linking.openURL(`https://wa.me/${services.whatsapp_no}`);
   };
 
   const handleShare = async () => {
     try {
       const result = await Share.share({
-        message: `Check out this product: ${name}\n\nPrice: ₹${price} (Original: ₹${originalPrice})\n\nBuy here: ${
-          website || "Link not available"
-        }\n\nCall: ${phoneNumber || "N/A"}\nWhatsApp: ${
-          whatsappNumber || "N/A"
+        message: `Check out this service: ${services?.shop_name}\n\n Visit: ${
+          services?.map_link || "Link not available"
+        }\n\nCall: ${services?.mobile || "N/A"}\nWhatsApp: ${
+          services?.whatsapp_no || "N/A"
         }`,
       });
 
       if (result.action === Share.sharedAction) {
-        // shared or activityType
+        // Optional: handle shared result
       }
     } catch (error) {
       alert(
@@ -132,22 +118,24 @@ const ProductDetail = () => {
         return;
       }
 
-      // Example image for now
-      const uri = Image.resolveAssetSource(images[currentIndex]).uri;
+      const allImages = [
+        services?.main_image,
+        ...(services?.images || []),
+      ].filter(Boolean);
+      const uri = allImages[currentIndex];
+      if (!uri) return alert("No image to download.");
+
+      const fileName = uri.split("/").pop() || "downloaded.jpg";
+      const fileUri = FileSystem.documentDirectory + fileName;
 
       const downloadResumable = FileSystem.createDownloadResumable(
         uri,
-        FileSystem.documentDirectory + "downloadedImage.jpg"
+        fileUri
       );
-
       const downloadResult = await downloadResumable.downloadAsync();
-      if (!downloadResult) {
-        alert("Failed to download image.");
-        return;
-      }
-      const localUri = downloadResult.uri;
+      if (!downloadResult) return alert("Failed to download image.");
 
-      const asset = await MediaLibrary.createAssetAsync(localUri);
+      const asset = await MediaLibrary.createAssetAsync(downloadResult.uri);
       await MediaLibrary.createAlbumAsync("Download", asset, false);
 
       alert("Image saved to gallery!");
@@ -157,11 +145,48 @@ const ProductDetail = () => {
     }
   };
 
+  const allImages = [services?.main_image, ...(services?.images || [])].filter(
+    Boolean
+  );
+
+  useEffect(() => {
+    const getData = async () => {
+      try {
+        if (typeof serviceId === "string") {
+          const data = await fetchShopServiceDetail(serviceId);
+          setServices(data?.message || null);
+        } else {
+          setError("Invalid service ID");
+        }
+      } catch (err: any) {
+        setError(err.message || "Error fetching data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getData();
+  }, [serviceId]);
+  
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#002855" />
+      </View>
+    );
+  }
+
+  if (error)
+    return (
+      <Text style={{ color: "red", textAlign: "center", marginTop: 100 }}>
+        {error}
+      </Text>
+    );
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       <ScrollView style={styles.container}>
         <View style={styles.headerIcons}>
-          {/* Left - Back */}
           <TouchableOpacity
             onPress={() => router.back()}
             style={styles.iconButton}
@@ -169,11 +194,11 @@ const ProductDetail = () => {
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
 
-          {/* Right - Download */}
           <TouchableOpacity onPress={handleDownload} style={styles.iconButton}>
             <Ionicons name="download-outline" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
+
         <ScrollView
           horizontal
           pagingEnabled
@@ -181,18 +206,22 @@ const ProductDetail = () => {
           onScroll={handleScroll}
           scrollEventThrottle={16}
         >
-          {images.map((image, index) => (
-            <TouchableOpacity key={index} onPress={() => openImageModal(image)}>
+          {allImages.map((image, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => openImageModal({ uri: image })}
+            >
               <Image
-                source={image}
+                source={{ uri: image }}
                 style={styles.productImage}
                 resizeMode="cover"
               />
             </TouchableOpacity>
           ))}
         </ScrollView>
+
         <View style={styles.dotsContainer}>
-          {images.map((_, index) => (
+          {allImages.map((_, index) => (
             <View
               key={index}
               style={[styles.dot, currentIndex === index && styles.activeDot]}
@@ -214,31 +243,12 @@ const ProductDetail = () => {
         </Modal>
 
         <View style={styles.detailsContainer}>
-          <Text style={styles.title}>{name}</Text>
-          <Text style={styles.rating}>
-            ⭐⭐⭐⭐☆ - 4.0 out of 5 stars (428)
-          </Text>
-          <Text style={styles.description}>
-            Effortlessly remove facial hair with this sleek and gentle trimmer,
-            perfect for upper lip, chin, and beard areas. Powered by a 1200mAh
-            rechargeable battery, it offers up to 30 minutes of cordless use.
-            Compact, travel-friendly, and safe for all skin types. Ideal for
-            both men and women seeking smooth, salon-like results at home.
-          </Text>
-          <View style={styles.priceContainer}>
-            <Text style={styles.price}>₹ {price}</Text>
-            <Text style={styles.originalPrice}>₹ {originalPrice}</Text>
-          </View>
-          <Text style={styles.taxInfo}>MRP(incl. of all taxes)</Text>
+          <Text style={styles.title}>{services?.shop_name}</Text>
 
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{
-              paddingHorizontal: 10,
-              gap: 10,
-              marginTop: 16,
-            }}
+            contentContainerStyle={{ gap: 10, marginTop: 16, marginBottom: 16 }}
           >
             <TouchableOpacity style={styles.actionButton} onPress={handleCall}>
               <Ionicons name="call-outline" size={18} color="#002855" />
@@ -264,46 +274,18 @@ const ProductDetail = () => {
             </TouchableOpacity>
           </ScrollView>
 
-          {/* <TouchableOpacity style={styles.buttonOutline} onPress={handleShare}>
-          <Text style={styles.buttonOutlineText}>Share Now</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.buttonPrimary}
-          onPress={() => router.push("/(components)/addToCart")}
-        >
-          <Text style={styles.buttonPrimaryText}>Add To Cart</Text>
-        </TouchableOpacity> */}
-
-          <TouchableOpacity
-            onPress={toggleDescription}
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginTop: 10,
+          <RenderHTML
+            contentWidth={width}
+            source={{ html: decodedHtml }}
+            tagsStyles={{
+              p: {
+                textAlign: "justify",
+                color: "#333",
+                fontSize: 14,
+                lineHeight: 25,
+              },
             }}
-          >
-            <Text style={{ fontSize: 14, fontWeight: "bold" }}>
-              Description
-            </Text>
-
-            <Text style={styles.toggleDescriptionText}>
-              {showDescription ? "-" : "+"}
-            </Text>
-          </TouchableOpacity>
-
-          {showDescription && (
-            <Text style={styles.description}>
-              Effortlessly remove facial hair with this sleek and gentle
-              trimmer, perfect for upper lip, chin, and beard areas. Powered by
-              a 1200mAh rechargeable battery, it offers up to 30 minutes of
-              cordless use. Compact, travel-friendly, and safe for all skin
-              types. Ideal for both men and women seeking smooth, salon-like
-              results at home.
-            </Text>
-          )}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -338,6 +320,7 @@ const styles = StyleSheet.create({
   productImage: {
     width: screenWidth,
     height: 300,
+    objectFit: "contain",
   },
   toggleDescriptionButton: {
     marginBottom: 10,
@@ -364,6 +347,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#002855",
     width: 10,
     height: 10,
+    borderRadius: 5,
   },
   modalContainer: {
     flex: 1,
@@ -441,7 +425,7 @@ const styles = StyleSheet.create({
   },
   headerIcons: {
     position: "absolute",
-    top: 40,
+    top: 20,
     left: 0,
     right: 0,
     zIndex: 10,

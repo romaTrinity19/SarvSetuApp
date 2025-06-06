@@ -10,12 +10,11 @@ import {
   ActivityIndicator,
   useWindowDimensions,
 } from "react-native";
-import { Video, ResizeMode } from "expo-av";
 import { WebView } from "react-native-webview";
 import { StatusBar } from "react-native";
 import { fetchCMSData } from "@/components/utils/api";
 import Toast from "react-native-toast-message";
-
+import { Video, ResizeMode } from 'expo-av';
 const UniversalVideoPlayer = () => {
   const [loading, setLoading] = useState(false);
   const [Data, setData] = useState<any>(null);
