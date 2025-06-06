@@ -126,6 +126,7 @@ const handleSubmit = async () => {
               value={fullName}
               onChangeText={setFullName}
               placeholder="Full Name"
+               placeholderTextColor="#555"
             />
 
             <Text style={styles.label}>Email Address</Text>
@@ -134,6 +135,7 @@ const handleSubmit = async () => {
               value={email}
               onChangeText={setEmail}
               placeholder="Email Address"
+               placeholderTextColor="#555"
               keyboardType="email-address"
             />
 
@@ -146,6 +148,7 @@ const handleSubmit = async () => {
                 value={phone}
                 onChangeText={setPhone}
                 placeholder="Phone Number"
+                 placeholderTextColor="#555"
                 keyboardType="phone-pad"
               />
             </View>
@@ -156,6 +159,7 @@ const handleSubmit = async () => {
               value={subject}
               onChangeText={setSubject}
               placeholder="Subject"
+               placeholderTextColor="#555"
             />
 
             <Text style={styles.label}>Message</Text>
@@ -164,6 +168,7 @@ const handleSubmit = async () => {
               value={message}
               onChangeText={setMessage}
               placeholder="Message"
+               placeholderTextColor="#555"
               multiline
             />
 
@@ -233,6 +238,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 10,
     marginTop: 6,
+    color:'black'
   },
   phoneInputBox: {
     flexDirection: "row",

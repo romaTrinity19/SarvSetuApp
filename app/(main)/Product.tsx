@@ -6,6 +6,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useFocusEffect } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   Image,
   Linking,
@@ -13,6 +14,7 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -31,10 +33,13 @@ type ShopService = {
 
 export default function ProductListScreen() {
   const [filterVisible, setFilterVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [selectedFilter, setSelectedFilter] = useState("recommended");
   const [services, setServices] = useState<ShopService[]>([]);
+  const [filteredServices, setFilteredServices] = useState<ShopService[]>([]);
 
+  const [searchText, setSearchText] = useState("");
   const [products, setProducts] = useState(services);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +58,21 @@ export default function ProductListScreen() {
 
     getData();
   }, []);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const data = await fetchShopServices();
+      setServices(data?.message?.service_data || []);
+      const savedShops = await AsyncStorage.getItem("shops");
+      const parsed = savedShops ? JSON.parse(savedShops) : [];
+      setProducts([...parsed, ...(data?.message?.service_data || [])]);
+    } catch (err: any) {
+      setError(err.message || "Error refreshing data");
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   useFocusEffect(
     React.useCallback(() => {
@@ -82,6 +102,31 @@ export default function ProductListScreen() {
     setFilterVisible(false);
   };
 
+  useEffect(() => {
+    if (searchText.trim() === "") {
+      setFilteredServices(services);
+    } else {
+      const filtered = services.filter((item) =>
+        item.shop_name.toLowerCase().includes(searchText.toLowerCase())
+      );
+      setFilteredServices(filtered);
+    }
+  }, [searchText, services]);
+
+  if (loading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#fff",
+        }}
+      >
+        <ActivityIndicator size="large" color="#002B5B" />
+      </View>
+    );
+  }
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
@@ -90,32 +135,46 @@ export default function ProductListScreen() {
           <Text style={styles.headerText}>Shop & Services</Text>
         </View>
         <View style={styles.horizontalLine} />
-        <View style={{ marginHorizontal: 15 }}>
-          <View
+        {/* Search Input */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: "#E0F2FE",
+            borderColor:'#002B5B',
+            borderWidth:0.5,
+            borderRadius: 10,
+            paddingHorizontal: 12,
+            marginTop: 15,
+            marginHorizontal:15,
+          }}
+        >
+          <Ionicons name="search" size={20} color="#888" />
+          <TextInput
+            placeholder="Search by shop name..."
+            value={searchText}
+            onChangeText={setSearchText}
             style={{
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              marginVertical: 10,
+              flex: 1,
+              height: 40,
+              marginLeft: 8,
+              color: "#000",
+              fontSize: 16,
             }}
-          >
-            <TouchableOpacity onPress={() => setFilterVisible(true)}>
-              <Ionicons name="filter" size={24} color="black" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.allProductsButton}
-              onPress={() => setProducts(products)}
-            >
-              <Text style={styles.allProductsText}>All Shop & Services</Text>
-            </TouchableOpacity>
-          </View>
-
+            autoCorrect={false}
+            autoCapitalize="none"
+            clearButtonMode="while-editing"
+          />
+        </View>
+      
           <FlatList
-            data={services}
+            data={filteredServices}
             keyExtractor={(item) => item?.service_id}
             numColumns={1}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContainer}
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
             renderItem={({ item }) => (
               <View style={styles.productCard}>
                 <TouchableOpacity
@@ -125,7 +184,7 @@ export default function ProductListScreen() {
                       pathname: "/(components)/productDetails/[slug]",
                       params: {
                         slug: item.service_id,
-                        serviceId:item.service_id
+                        serviceId: item.service_id,
                       },
                     })
                   }
@@ -138,12 +197,6 @@ export default function ProductListScreen() {
                 </TouchableOpacity>
 
                 <Text style={styles.productName}>{item.shop_name}</Text>
-                {/* <Text style={styles.productPrice}>
-                  ₹ {item.price.toFixed(2)}{" "}
-                  <Text style={styles.strike}>
-                    ₹ {item.originalPrice.toFixed(2)}
-                  </Text>
-                </Text> */}
 
                 <View style={styles.buttonContainer}>
                   <TouchableOpacity
@@ -172,7 +225,7 @@ export default function ProductListScreen() {
               </View>
             )}
           />
-        </View>
+        
 
         <Modal visible={filterVisible} transparent animationType="slide">
           <View style={styles.modalContainer}>
@@ -252,7 +305,7 @@ const styles = StyleSheet.create({
   },
   allProductsText: { color: "#fff", fontWeight: "bold" },
   listContainer: { paddingBottom: 20 },
-  productCard: { flex: 1, margin: 5, borderRadius: 10, padding: 10 },
+  productCard: { flex: 1,borderRadius: 10, padding: 10, marginHorizontal:10 },
   productImage: {
     width: "100%",
     height: 200,

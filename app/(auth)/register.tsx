@@ -120,10 +120,9 @@ const SignUpScreen = () => {
       );
 
       const data = response.data;
-     
 
       if (data.status === "success") {
-      router.push({
+        router.push({
           pathname: "/(auth)/otp",
           params: {
             email: email,
@@ -160,12 +159,12 @@ const SignUpScreen = () => {
         position: "top",
       });
     } finally {
-      setLoading(false); // Reset loading regardless of outcome
+      setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -186,23 +185,34 @@ const SignUpScreen = () => {
           <View style={styles.form}>
             {/* First and Last Name */}
             <View style={styles.row}>
-              <TextInput
-                placeholder="First Name"
-                value={firstName}
-                onChangeText={setFirstName}
-                style={[styles.input, { flex: 1, marginRight: 8 }]}
-              />
-              <TextInput
-                placeholder="Last Name"
-                value={lastName}
-                onChangeText={setLastName}
-                style={[styles.input, { flex: 1 }]}
-              />
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>First Name</Text>
+                <TextInput
+                  placeholder="First Name"
+                  placeholderTextColor="#555"
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  style={styles.input}
+                />
+              </View>
+
+              <View style={styles.inputContainer2}>
+                <Text style={styles.label}>Last Name</Text>
+                <TextInput
+                  placeholder="Last Name"
+                   placeholderTextColor="#555"
+                  value={lastName}
+                  onChangeText={setLastName}
+                  style={styles.input}
+                />
+              </View>
             </View>
 
             {/* Email */}
+            <Text style={styles.label}>Email Address</Text>
             <TextInput
               placeholder="Email Address"
+               placeholderTextColor="#555"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -210,6 +220,7 @@ const SignUpScreen = () => {
             />
 
             {/* Country Code + Phone */}
+            <Text>Phone Number</Text>
             <View style={styles.phoneRow}>
               <View style={styles.flagBox}>
                 <CountryPicker
@@ -229,17 +240,19 @@ const SignUpScreen = () => {
               </View>
               <TextInput
                 placeholder="Phone Number"
+                 placeholderTextColor="#555"
                 value={phone}
                 onChangeText={setPhone}
                 style={[
                   styles.input,
-                  { flex: 1, marginLeft: 8, marginTop: 10 },
+                  { flex: 1, marginLeft: 8, marginTop: 10, color: "black" },
                 ]}
                 keyboardType="numeric"
               />
             </View>
 
             {/* State Picker */}
+            <Text style={styles.label}>State</Text>
             <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={selectedState}
@@ -257,6 +270,7 @@ const SignUpScreen = () => {
             </View>
 
             {/* Role Picker */}
+            <Text>Role</Text>
             <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={role}
@@ -269,17 +283,21 @@ const SignUpScreen = () => {
             </View>
 
             {/* Referral */}
+            <Text>Referral Code</Text>
             <TextInput
               placeholder="Referral Code"
+               placeholderTextColor="#555"
               value={referral}
               onChangeText={setReferral}
               style={styles.input}
             />
 
             {/* Password */}
+            <Text>Password</Text>
             <View style={styles.passwordBox}>
               <TextInput
                 placeholder="Set Password"
+                 placeholderTextColor="#555"
                 value={password}
                 onChangeText={setPassword}
                 style={[styles.input, { flex: 1 }]}
@@ -298,9 +316,11 @@ const SignUpScreen = () => {
             </View>
 
             {/* Confirm Password */}
+            <Text>Confirm Password</Text>
             <View style={styles.passwordBox}>
               <TextInput
                 placeholder="Confirm Password"
+                 placeholderTextColor="#555"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 style={[styles.input, { flex: 1 }]}
@@ -407,6 +427,19 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 15,
     marginBottom: 12,
+    color: "black",
+  },
+  inputContainer: {
+    flex: 1,
+    marginRight: 4,
+  },
+  inputContainer2: {
+    flex: 1,
+    marginLeft: 4,
+  },
+
+  label: {
+    marginBottom: 5,
   },
   phoneRow: {
     flexDirection: "row",

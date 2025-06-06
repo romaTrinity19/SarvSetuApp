@@ -23,14 +23,13 @@ import Toast from "react-native-toast-message";
 const UploadDocumentScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-   
-   
 
   const [image, setImage] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [userData, setUserData] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
   const { adID } = useLocalSearchParams();
+  const [alreadyUploaded, setAlreadyUploaded] = useState(false);
 
   const openPicker = async (mode: "camera" | "gallery") => {
     setModalVisible(false);
@@ -68,11 +67,20 @@ const UploadDocumentScreen = () => {
         const regId = parsedUser?.reg_id;
         const freshUserData = await fetchUserData(regId);
         setUserData(freshUserData || parsedUser);
+
+        const key = `uploadDone_${regId}_${
+          Array.isArray(adID) ? adID[0] : adID
+        }`;
+        const uploaded = await AsyncStorage.getItem(key);
+        if (uploaded === "true") {
+          setAlreadyUploaded(true);
+        }
       }
     } catch (error) {
       console.error("Error loading user data:", error);
     }
   };
+
   useEffect(() => {
     loadData();
   }, []);
@@ -126,7 +134,6 @@ const UploadDocumentScreen = () => {
           method: "POST",
           headers: {
             Accept: "application/json",
-            // DO NOT manually set 'Content-Type' for FormData in React Native
           },
           body: formData,
         }
@@ -143,6 +150,10 @@ const UploadDocumentScreen = () => {
       }
 
       if (response.ok && result.status === "success") {
+        const key = `uploadDone_${userData.reg_id}_${
+          Array.isArray(adID) ? adID[0] : adID
+        }`;
+        await AsyncStorage.setItem(key, "true");
         Toast.show({
           type: "success",
           text1: "Upload Successful",
@@ -221,12 +232,19 @@ const UploadDocumentScreen = () => {
 
           {/* Upload Button */}
           <TouchableOpacity
-            style={[styles.uploadButton, submitting && { opacity: 0.6 }]}
+            style={[
+              styles.uploadButton,
+              (submitting || alreadyUploaded) && { opacity: 0.6 },
+            ]}
             onPress={handleSubmit}
-            disabled={submitting}
+            disabled={submitting || alreadyUploaded}
           >
             <Text style={styles.uploadButtonText}>
-              {submitting ? "Uploading..." : "Upload Document"}
+              {alreadyUploaded
+                ? "Already Uploaded"
+                : submitting
+                ? "Uploading..."
+                : "Upload Document"}
             </Text>
           </TouchableOpacity>
         </View>

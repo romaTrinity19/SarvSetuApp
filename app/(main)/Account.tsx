@@ -116,10 +116,13 @@ const AccountScreen = () => {
           <TouchableOpacity
             style={styles.listItem2}
             onPress={() => {
-              packageInfoUser[0]?.is_approved == "1" ||
-              packageInfo[0]?.is_approved == "1"
-                ? router.push("/(main)/Home")
-                : router.push("/(components)/memberShip");
+              if (packageInfoUser[0]?.is_approved == "1") {
+                router.push("/(components)/packageDetailsPage");
+              } else if (packageInfo[0]?.is_approved == "1") {
+                router.push("/(main)/Home");
+              } else {
+                router.push("/(components)/memberShip");
+              }
             }}
           >
             <Text style={styles.title}>Buy An Subscription</Text>
@@ -146,6 +149,13 @@ const AccountScreen = () => {
             subtitle="Update your information"
             route="/(components)/editProfile"
           />
+          <MenuItem
+            title="Wallet"
+            subtitle="Total Wallet Amount - ₹ 1500"
+            route="/(components)/wallet"
+            highlightAmount={true}
+          />
+
           <MenuItem
             title="About Us"
             subtitle="Get to Know Us"
@@ -181,7 +191,6 @@ const AccountScreen = () => {
             <Entypo name="facebook" size={24} style={styles.socialIcon} />
             <Ionicons name="logo-twitter" size={24} style={styles.socialIcon} />
           </View> */}
-          
         </ScrollView>
       </View>
     </SafeAreaView>
@@ -192,19 +201,39 @@ const MenuItem = ({
   title,
   subtitle,
   route,
+  highlightAmount = false,
 }: {
   title: string;
   subtitle: string;
   route: any;
-}) => (
-  <TouchableOpacity style={styles.listItem} onPress={() => router.push(route)}>
-    <View>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.subtitle}>{subtitle}</Text>
-    </View>
-    <Ionicons name="chevron-forward" size={20} color="gray" />
-  </TouchableOpacity>
-);
+  highlightAmount?: boolean;
+}) => {
+  const renderSubtitle = () => {
+    if (highlightAmount && subtitle.includes("-")) {
+      const [text, amount] = subtitle.split("-");
+      return (
+        <Text style={styles.subtitle}>
+          {text.trim()} -{" "}
+          <Text style={styles.amountHighlight}>{amount.trim()}</Text>
+        </Text>
+      );
+    }
+    return <Text style={styles.subtitle}>{subtitle}</Text>;
+  };
+
+  return (
+    <TouchableOpacity
+      style={styles.listItem}
+      onPress={() => router.push(route)}
+    >
+      <View>
+        <Text style={styles.title}>{title}</Text>
+        {renderSubtitle()}
+      </View>
+      <Ionicons name="chevron-forward" size={20} color="gray" />
+    </TouchableOpacity>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -228,6 +257,11 @@ const styles = StyleSheet.create({
     zIndex: 10,
     elevation: 2,
   },
+  amountHighlight: {
+    color: "green",
+    fontWeight: "bold",
+  },
+
   header: {
     fontSize: 20,
     fontWeight: "bold",

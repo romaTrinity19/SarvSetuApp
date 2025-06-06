@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  FlatList,
   Image,
   ScrollView,
   StatusBar,
@@ -265,7 +266,7 @@ const App = () => {
             </Text>
           </View>
         </View>
-        <ScrollView
+        {/* <ScrollView
           style={styles.container}
           contentContainerStyle={{ paddingTop: 8 }}
         >
@@ -279,7 +280,24 @@ const App = () => {
               onDeleteSuccess={refreshDashboard}
             />
           ))}
-        </ScrollView>
+        </ScrollView> */}
+        <FlatList
+  data={ads}
+  keyExtractor={(item) => item.ads_id.toString()}
+  contentContainerStyle={{ paddingTop: 8, paddingBottom: 20 }}
+  renderItem={({ item }) => (
+    <AdCard
+      imageSrc={item.upload_img}
+      payout={item.payamt}
+      isApprove={item?.status}
+      id={item.ads_id}
+      onDeleteSuccess={refreshDashboard}
+    />
+  )}
+  onRefresh={refreshDashboard}
+  refreshing={loading}
+/>
+
       </View>
     </SafeAreaView>
   );

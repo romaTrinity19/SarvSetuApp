@@ -11,6 +11,10 @@ export default function MainLayout() {
         headerShown: false,
         tabBarActiveTintColor: "#002B5B",
         tabBarInactiveTintColor: "gray",
+        tabBarStyle: {
+          backgroundColor: "#fff",
+        },
+
         tabBarIcon: ({
           focused,
           color,
@@ -41,10 +45,12 @@ export default function MainLayout() {
       })}
     >
       <Tabs.Screen name="Home" />
-      <Tabs.Screen name="Product"  options={{ tabBarLabel: "Shop & Services" }}/>
+      <Tabs.Screen
+        name="Product"
+        options={{ tabBarLabel: "Shop & Services" }}
+      />
       <Tabs.Screen name="Account" />
       <Tabs.Screen name="Referral" />
-      
     </Tabs>
   );
 }
