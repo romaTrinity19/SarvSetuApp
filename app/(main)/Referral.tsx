@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const ReferAndEarn = () => {
-  const referralCode = "ROM24798";
+  const referralCode = "ROMA24798";
 
   const copyToClipboard = () => {
     Clipboard.setString(referralCode);

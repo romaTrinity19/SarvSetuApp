@@ -461,6 +461,8 @@ const App = () => {
       setLoading(false);
     }
   };
+
+  console.log('adsssssss', ads)
   
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -471,6 +473,7 @@ const App = () => {
     ]);
     setRefreshing(false);
   };
+ 
 
   if (loading || !userData) {
     return (
