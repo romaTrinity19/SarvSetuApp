@@ -79,11 +79,11 @@ export default function WalletScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Feather name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={{ fontSize: 20, fontWeight: "bold" }}>About Us</Text>
+        <Text style={{ fontSize: 20, fontWeight: "bold" }}>My Wallet</Text>
       </View>
       <ScrollView contentContainerStyle={styles.container}>
         {/* Wallet Card */}
-        <LinearGradient colors={["#4B65E9", "#7F8CFF"]} style={styles.card}>
+        <LinearGradient colors={["#7A92F0" , "#1BAAE3","#1B49F2"]} style={styles.card}>
           <Text style={styles.cardTitle}>Total Wallet Balance</Text>
           <Text style={styles.cardAmount}>₹ {walletData.total}</Text>
         </LinearGradient>
