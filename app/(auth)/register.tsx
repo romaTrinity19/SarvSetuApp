@@ -1,5 +1,4 @@
 import Feather from "@expo/vector-icons/Feather";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Picker } from "@react-native-picker/picker";
 import axios from "axios";
 import { router } from "expo-router";
@@ -7,6 +6,7 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Platform,
   ScrollView,
   StatusBar,
@@ -15,12 +15,11 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  KeyboardAvoidingView,
 } from "react-native";
-import CountryPicker, {
-  Country,
-  CountryCode,
-} from "react-native-country-picker-modal";
+// import CountryPicker, {
+//   Country,
+//   CountryCode,
+// } from "react-native-country-picker-modal";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
@@ -33,8 +32,8 @@ type State = {
 const SignUpScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [countryCode, setCountryCode] = useState<CountryCode>("IN");
-  const [country, setCountry] = useState<Country | null>(null);
+  // const [countryCode, setCountryCode] = useState<CountryCode>("IN");
+  // const [country, setCountry] = useState<Country | null>(null);
   // Form fields
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -47,6 +46,36 @@ const SignUpScreen = () => {
   const [states, setStates] = useState<State[]>([]);
   const [selectedState, setSelectedState] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isValid, setIsValid] = useState<boolean | null>(null);
+
+  const checkReferral = async (code: string) => {
+    if (!code) {
+      setIsValid(null);
+      return;
+    }
+    try {
+      const response = await fetch(
+        `https://sarvsetu.trinitycrm.in/admin/Api/registration_api.php?type=check_referral`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ reg_code: code }),
+        }
+      );
+      const data = await response.json();
+      if (data.status === "success") {
+        setIsValid(true);
+      } else {
+        setIsValid(false);
+      }
+    } catch (err) {
+      console.error("Referral check error:", err);
+      setIsValid(false);
+    }
+  };
 
   useEffect(() => {
     const fetchStates = async () => {
@@ -76,7 +105,6 @@ const SignUpScreen = () => {
       !email ||
       !phone ||
       !selectedState ||
-      !role ||
       !password ||
       !confirmPassword
     ) {
@@ -108,8 +136,9 @@ const SignUpScreen = () => {
           email: email,
           contact_no: phone,
           state_id: selectedState,
+          referral_code: referral,
           password: password,
-          role: role,
+          role: "user",
           type: "registration",
         },
         {
@@ -127,7 +156,7 @@ const SignUpScreen = () => {
           params: {
             email: email,
             otp: data.otp,
-            role: role,
+            role: "user",
             regId: data.data.reg_id,
             phone: phone,
             firstName: firstName,
@@ -200,7 +229,7 @@ const SignUpScreen = () => {
                 <Text style={styles.label}>Last Name</Text>
                 <TextInput
                   placeholder="Last Name"
-                   placeholderTextColor="#555"
+                  placeholderTextColor="#555"
                   value={lastName}
                   onChangeText={setLastName}
                   style={styles.input}
@@ -212,35 +241,20 @@ const SignUpScreen = () => {
             <Text style={styles.label}>Email Address</Text>
             <TextInput
               placeholder="Email Address"
-               placeholderTextColor="#555"
+              placeholderTextColor="#555"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
               style={styles.input}
             />
 
-            {/* Country Code + Phone */}
-            <Text>Phone Number</Text>
+            <Text style={styles.label}>Phone Number</Text>
             <View style={styles.phoneRow}>
-              <View style={styles.flagBox}>
-                <CountryPicker
-                  countryCode={countryCode}
-                  withFilter
-                  withFlag
-                  withCallingCode
-                  withEmoji
-                  onSelect={(country: Country) => {
-                    setCountryCode(country.cca2);
-                    setCountry(country);
-                  }}
-                />
-                <Text style={styles.phoneCode}>
-                  +{country?.callingCode?.[0] || "91"}
-                </Text>
-              </View>
+              <Text style={styles.flag}>🇮🇳</Text>
+              <Text>+91</Text>
               <TextInput
                 placeholder="Phone Number"
-                 placeholderTextColor="#555"
+                placeholderTextColor="#555"
                 value={phone}
                 onChangeText={setPhone}
                 style={[
@@ -250,6 +264,38 @@ const SignUpScreen = () => {
                 keyboardType="numeric"
               />
             </View>
+
+            {/* Country Code + Phone */}
+            {/* <Text>Phone Number</Text>
+            <View style={styles.phoneRow}>
+              <View style={styles.flagBox}>
+                {/* <CountryPicker
+                  countryCode={countryCode}
+                  withFilter
+                  withFlag
+                  withCallingCode
+                  withEmoji
+                  onSelect={(country: Country) => {
+                    setCountryCode(country.cca2);
+                    setCountry(country);
+                  }}
+                /> */}
+            {/* <Text style={styles.phoneCode}>
+                  +{country?.callingCode?.[0] || "91"}
+                </Text>  }
+              </View>
+              <TextInput
+                placeholder="Phone Number"
+                placeholderTextColor="#555"
+                value={phone}
+                onChangeText={setPhone}
+                style={[
+                  styles.input,
+                  { flex: 1, marginLeft: 8, marginTop: 10, color: "black" },
+                ]}
+                keyboardType="numeric"
+              />
+            </View> */}
 
             {/* State Picker */}
             <Text style={styles.label}>State</Text>
@@ -270,7 +316,7 @@ const SignUpScreen = () => {
             </View>
 
             {/* Role Picker */}
-            <Text>Role</Text>
+            {/* <Text>Role</Text>
             <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={role}
@@ -280,24 +326,36 @@ const SignUpScreen = () => {
                 <Picker.Item label="User" value="user" />
                 <Picker.Item label="Merchant" value="vendor" />
               </Picker>
-            </View>
+            </View> */}
 
             {/* Referral */}
             <Text>Referral Code</Text>
             <TextInput
               placeholder="Referral Code"
-               placeholderTextColor="#555"
+              placeholderTextColor="#555"
               value={referral}
-              onChangeText={setReferral}
+              onChangeText={(text) => {
+                setReferral(text);
+              }}
+              onBlur={() => checkReferral(referral)}
               style={styles.input}
             />
-
+            {/* {isValid === true && (
+              <Text style={{ color: "green", marginBottom: 20 }}>
+                Valid Code
+              </Text>
+            )} */}
+            {isValid === false && (
+              <Text style={{ color: "red", marginBottom: 20 }}>
+                Invalid Code
+              </Text>
+            )}
             {/* Password */}
             <Text>Password</Text>
             <View style={styles.passwordBox}>
               <TextInput
                 placeholder="Set Password"
-                 placeholderTextColor="#555"
+                placeholderTextColor="#555"
                 value={password}
                 onChangeText={setPassword}
                 style={[styles.input, { flex: 1 }]}
@@ -320,7 +378,7 @@ const SignUpScreen = () => {
             <View style={styles.passwordBox}>
               <TextInput
                 placeholder="Confirm Password"
-                 placeholderTextColor="#555"
+                placeholderTextColor="#555"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 style={[styles.input, { flex: 1 }]}
@@ -391,6 +449,10 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#fff",
     marginBottom: 8,
+  },
+  phoneInput: {
+    flex: 1,
+    paddingVertical: 10,
   },
   subText: {
     color: "#eee",

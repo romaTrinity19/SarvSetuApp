@@ -14,7 +14,7 @@ export const fetchUserData = async (reg_id: string) => {
 
     // Extract the first user object from user_data array
     if (data.status === "success" && data.message?.user_data?.length > 0) {
-      return data.message.user_data[0];  // <-- return user object here
+      return data.message.user_data[0]; // <-- return user object here
     } else {
       console.warn("No user data found in response");
       return null;
@@ -25,7 +25,8 @@ export const fetchUserData = async (reg_id: string) => {
   }
 };
 
-const BANNER_API_URL = 'https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=banner';
+const BANNER_API_URL =
+  "https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=banner";
 
 export const fetchBannerImages = async (): Promise<string[]> => {
   try {
@@ -38,13 +39,12 @@ export const fetchBannerImages = async (): Promise<string[]> => {
 
     return images || [];
   } catch (error) {
-    console.error('Error fetching banner images:', error);
+    console.error("Error fetching banner images:", error);
     throw error;
   }
 };
 
-
- // components/utils/api.ts
+// components/utils/api.ts
 export const getPackageIngfo = async (regId: string) => {
   try {
     const response = await fetch(
@@ -52,10 +52,8 @@ export const getPackageIngfo = async (regId: string) => {
     );
 
     const json = await response.json();
-   
 
     if (json.status === "success" && json.message?.packageinfo) {
-      
       return json.message?.packageinfo; // return just the data
     } else {
       console.warn("Invalid data format");
@@ -74,10 +72,8 @@ export const getPackageIngfoForUser = async (regId: string) => {
     );
 
     const json = await response.json();
-   
 
     if (json.status === "success" && json.message?.packageinfo) {
-      
       return json.message?.packageinfo; // return just the data
     } else {
       console.warn("Invalid data format");
@@ -114,14 +110,15 @@ export const fetchCMSData = async (column: string) => {
 
 export const fetchShopServices = async () => {
   try {
-    const response = await axios.get('https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=shopservice');
+    const response = await axios.get(
+      "https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=shopservice"
+    );
     return response.data;
   } catch (error) {
-    console.error('Error fetching shop services:', error);
+    console.error("Error fetching shop services:", error);
     throw error;
   }
 };
-
 
 export const fetchShopServiceDetail = async (service_id: string) => {
   try {
@@ -129,17 +126,42 @@ export const fetchShopServiceDetail = async (service_id: string) => {
       `https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php`,
       {
         params: {
-          type: 'shopservicedetail',
+          type: "shopservicedetail",
           service_id,
         },
       }
     );
     return response.data;
   } catch (error) {
-    console.error('Error fetching shop service detail:', error);
+    console.error("Error fetching shop service detail:", error);
     throw error;
   }
 };
 
+export const fetchAllWalletData = async (regId: number) => {
+  try {
+    const response = await axios.post(
+      "https://sarvsetu.trinitycrm.in/admin/Api/registration_api.php", // replace with your API URL
+      {
+        type: "get_wallet_referral", // your API uses 'type' to identify action
+        reg_id: regId,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-
+    if (response.data.status === "success") {
+      console.log("Wallet Data:", response.data);
+      return response.data;
+    } else {
+      console.log("Error:", response.data.message);
+      return null;
+    }
+  } catch (error) {
+    console.error("API Error:", error);
+    return null;
+  }
+};

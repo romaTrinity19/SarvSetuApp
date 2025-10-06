@@ -1,6 +1,5 @@
 import { fetchShopServices } from "@/components/utils/api";
 import Entypo from "@expo/vector-icons/Entypo";
-import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useFocusEffect } from "expo-router";
@@ -19,6 +18,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import ProtectedRoute from "../(components)/ProtectedRoute";
 type ShopService = {
   service_id: string;
   shop_name: string;
@@ -128,45 +128,46 @@ export default function ProductListScreen() {
     );
   }
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerText}>Shop & Services</Text>
-        </View>
-        <View style={styles.horizontalLine} />
-        {/* Search Input */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            backgroundColor: "#E0F2FE",
-            borderColor:'#002B5B',
-            borderWidth:0.5,
-            borderRadius: 10,
-            paddingHorizontal: 12,
-            marginTop: 15,
-            marginHorizontal:15,
-          }}
-        >
-          <Ionicons name="search" size={20} color="#888" />
-          <TextInput
-            placeholder="Search by shop name..."
-            value={searchText}
-            onChangeText={setSearchText}
+    <ProtectedRoute>
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+        <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <Text style={styles.headerText}>Shop & Services</Text>
+          </View>
+          <View style={styles.horizontalLine} />
+          {/* Search Input */}
+          <View
             style={{
-              flex: 1,
-              height: 40,
-              marginLeft: 8,
-              color: "#000",
-              fontSize: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: "#E0F2FE",
+              borderColor: "#002B5B",
+              borderWidth: 0.5,
+              borderRadius: 10,
+              paddingHorizontal: 12,
+              marginTop: 15,
+              marginHorizontal: 15,
             }}
-            autoCorrect={false}
-            autoCapitalize="none"
-            clearButtonMode="while-editing"
-          />
-        </View>
-      
+          >
+            <Ionicons name="search" size={20} color="#888" />
+            <TextInput
+              placeholder="Search by shop name..."
+              value={searchText}
+              onChangeText={setSearchText}
+              style={{
+                flex: 1,
+                height: 40,
+                marginLeft: 8,
+                color: "#000",
+                fontSize: 16,
+              }}
+              autoCorrect={false}
+              autoCapitalize="none"
+              clearButtonMode="while-editing"
+            />
+          </View>
+
           <FlatList
             data={filteredServices}
             keyExtractor={(item) => item?.service_id}
@@ -196,7 +197,10 @@ export default function ProductListScreen() {
                   />
                 </TouchableOpacity>
 
-                <Text style={styles.productName}>{item.shop_name}</Text>
+                <Text style={styles.productName}>
+                  {item?.shop_name.charAt(0).toUpperCase() +
+                    item.shop_name.slice(1)}
+                </Text>
 
                 <View style={styles.buttonContainer}>
                   <TouchableOpacity
@@ -225,51 +229,51 @@ export default function ProductListScreen() {
               </View>
             )}
           />
-        
 
-        <Modal visible={filterVisible} transparent animationType="slide">
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Sort By</Text>
+          <Modal visible={filterVisible} transparent animationType="slide">
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Sort By</Text>
 
-              {["recommended", "lowest", "highest"].map((type) => (
+                {["recommended", "lowest", "highest"].map((type) => (
+                  <TouchableOpacity
+                    key={type}
+                    style={styles.radioRow}
+                    onPress={() => handleFilterSelection(type)}
+                  >
+                    <Text style={styles.radioLabel}>
+                      {type === "recommended"
+                        ? "RECOMMENDED"
+                        : type === "lowest"
+                        ? "LOWEST PRICE"
+                        : "HIGHEST PRICE"}
+                    </Text>
+
+                    <Ionicons
+                      name={
+                        selectedFilter === type
+                          ? "radio-button-on"
+                          : "radio-button-off"
+                      }
+                      size={20}
+                      color="#002B5B"
+                      style={{ marginRight: 10 }}
+                    />
+                  </TouchableOpacity>
+                ))}
+
                 <TouchableOpacity
-                  key={type}
-                  style={styles.radioRow}
-                  onPress={() => handleFilterSelection(type)}
+                  onPress={() => setFilterVisible(false)}
+                  style={styles.closeButton}
                 >
-                  <Text style={styles.radioLabel}>
-                    {type === "recommended"
-                      ? "RECOMMENDED"
-                      : type === "lowest"
-                      ? "LOWEST PRICE"
-                      : "HIGHEST PRICE"}
-                  </Text>
-
-                  <Ionicons
-                    name={
-                      selectedFilter === type
-                        ? "radio-button-on"
-                        : "radio-button-off"
-                    }
-                    size={20}
-                    color="#002B5B"
-                    style={{ marginRight: 10 }}
-                  />
+                  <Entypo name="cross" size={24} color="black" />
                 </TouchableOpacity>
-              ))}
-
-              <TouchableOpacity
-                onPress={() => setFilterVisible(false)}
-                style={styles.closeButton}
-              >
-                <Entypo name="cross" size={24} color="black" />
-              </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        </Modal>
-      </View>
-    </SafeAreaView>
+          </Modal>
+        </View>
+      </SafeAreaView>{" "}
+    </ProtectedRoute>
   );
 }
 
@@ -278,7 +282,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 10,
     backgroundColor: "#fff",
-    paddingBottom: 140,
   },
   imageContainer: {
     borderRadius: 10,
@@ -305,7 +308,7 @@ const styles = StyleSheet.create({
   },
   allProductsText: { color: "#fff", fontWeight: "bold" },
   listContainer: { paddingBottom: 20 },
-  productCard: { flex: 1,borderRadius: 10, padding: 10, marginHorizontal:10 },
+  productCard: { flex: 1, borderRadius: 10, padding: 10, marginHorizontal: 10 },
   productImage: {
     width: "100%",
     height: 200,
@@ -314,7 +317,12 @@ const styles = StyleSheet.create({
     objectFit: "contain",
   },
 
-  productName: { fontSize: 13, marginBottom: 5 },
+  productName: {
+    fontSize: 16,
+    marginBottom: 5,
+    marginTop: 5,
+    fontWeight: "bold",
+  },
   productPrice: { fontWeight: "bold", fontSize: 16 },
   strike: { textDecorationLine: "line-through", color: "gray", fontSize: 12 },
   radioRow: {

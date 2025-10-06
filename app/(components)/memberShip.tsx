@@ -1,5 +1,10 @@
 // LifetimeMembershipScreen.tsx
+import { fetchUserData } from "@/components/utils/api";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -10,11 +15,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import Toast from "react-native-toast-message";
 import { SafeAreaView } from "react-native-safe-area-context";
-import axios from "axios";
+import Toast from "react-native-toast-message";
+import ProtectedRoute from "./ProtectedRoute";
 
 interface Package {
   package_id: string;
@@ -27,41 +30,63 @@ const LifetimeMembershipScreen = () => {
 
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
+  const [userData, setUserData] = useState<any>(null);
 
   useEffect(() => {
-    const fetchPackages = async () => {
+    const loadAndFetchUser = async () => {
       try {
-        const response = await axios.get(
-          "https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=getpackage"
-        );
+        const storedUser = await AsyncStorage.getItem("userData");
+        if (storedUser) {
+          const parsedUser = JSON.parse(storedUser);
+          const regId = parsedUser?.reg_id;
+          const freshUserData = await fetchUserData(regId);
 
-        const data = response.data;
-
-        if (
-          data.status === "success" &&
-          data.message &&
-          Array.isArray(data.message.package_data)
-        ) {
-          setPackage(data.message.package_data);
-        } else {
-          Toast.show({
-            type: "error",
-            text1: "Invalid package response",
-          });
+          setUserData(freshUserData || parsedUser);
         }
       } catch (error) {
-        Toast.show({
-          type: "error",
-          text1: "Error fetching packages",
-        });
-        console.error("Error fetching packages:", error);
-      } finally {
-        setLoading(false);
+        console.error("Error loading user data:", error);
       }
     };
-
-    fetchPackages();
+    loadAndFetchUser();
   }, []);
+
+  const fetchPackages = async () => {
+    try {
+      const response = await axios.get(
+        "https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php",
+        {
+          params: {
+            type: "getpackage_info",
+            reg_id: userData?.reg_id,
+          },
+        }
+      );
+      const data = response.data;
+      if (data.status === "success" && data.message) {
+        setPackage(data?.message?.package_data);
+        console.log("packages packages", packages);
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Invalid package response",
+        });
+      }
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Error fetching packages",
+      });
+      console.error("Error fetching packages:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (userData?.reg_id) {
+      fetchPackages();
+    }
+  }, [userData?.reg_id]);
 
   const handlePayOffline = () => {
     if (!selectedPackage) {
@@ -82,110 +107,115 @@ const LifetimeMembershipScreen = () => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-      <LinearGradient colors={["#053159", "#057496"]} style={styles.container}>
-        <Ionicons
-          name="close"
-          size={28}
-          color="#fff"
-          style={styles.closeIcon}
-          onPress={() => router.back()}
-        />
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <Text style={styles.heading}>
-            Enjoy Lifetime Membership Features!
-          </Text>
-          <View style={styles.horizontalLine} />
-          <View style={styles.benefitList}>
-            <Text style={styles.benefit}>
-              ✓ Enjoy a lifetime membership with just one payment
+    <ProtectedRoute>
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+        <LinearGradient
+          colors={["#053159", "#057496"]}
+          style={styles.container}
+        >
+          <Ionicons
+            name="close"
+            size={28}
+            color="#fff"
+            style={styles.closeIcon}
+            onPress={() => router.back()}
+          />
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Text style={styles.heading}>
+              Enjoy Lifetime Membership Features!
             </Text>
-            <Text style={styles.benefit}>
-              ✓ Get early access to new events, promotions, or exclusive
-              content.
-            </Text>
-            <Text style={styles.benefit}>
-              ✓ Exclusive ability to refer products & earn money.
-            </Text>
-            <Text style={styles.benefit}>
-              ✓ Share product deals & discounts with friends.
-            </Text>
-          </View>
-
-          <View style={styles.pricingBox}>
-            <View style={styles.priceRow1}>
-              <Text style={styles.label}>Select Your Prime Membership</Text>
-              <Text style={styles.motivationalText}>
-                🎁 Every plan comes with powerful perks — select your package 🌟
-                and level up!🚀
+            <View style={styles.horizontalLine} />
+            <View style={styles.benefitList}>
+              <Text style={styles.benefit}>
+                ✓ Enjoy a lifetime membership with just one payment
+              </Text>
+              <Text style={styles.benefit}>
+                ✓ Get early access to new events, promotions, or exclusive
+                content.
+              </Text>
+              <Text style={styles.benefit}>
+                ✓ Exclusive ability to refer products & earn money.
+              </Text>
+              <Text style={styles.benefit}>
+                ✓ Share product deals & discounts with friends.
               </Text>
             </View>
-            <Image
-              source={require("../../assets/images/gift.avif")}
-              style={styles.giftImage}
-            />
-          </View>
 
-          <Text style={styles.heading2}>Choose your Prime Membership:</Text>
-          <View style={styles.horizontalLine} />
-
-          <View style={styles.packageList}>
-            {loading ? (
-              <View
-                style={{
-                  flex: 1,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  paddingVertical: 20,
-                }}
-              >
-                <ActivityIndicator size="large" color="#fff" />
+            <View style={styles.pricingBox}>
+              <View style={styles.priceRow1}>
+                <Text style={styles.label}>Select Your Prime Membership</Text>
+                <Text style={styles.motivationalText}>
+                  🎁 Every plan comes with powerful perks — select your package
+                  🌟 and level up!🚀
+                </Text>
               </View>
-            ) : packages?.length > 0 ? (
-              packages.map((pkg) => (
-                <TouchableOpacity
-                  key={pkg.amount}
-                  style={[
-                    styles.packageItem,
-                    selectedPackage?.amount === pkg.amount &&
-                      styles.selectedPackage,
-                  ]}
-                  onPress={() => setSelectedPackage(pkg)}
-                >
-                  <Text
-                    style={[
-                      styles.packageText,
-                      selectedPackage?.amount === pkg.amount &&
-                        styles.selectedPackageText,
-                    ]}
-                  >
-                    ₹ {pkg.amount} - {pkg.in_month} month {pkg.package_name}{" "}
-                    Package
-                  </Text>
-                </TouchableOpacity>
-              ))
-            ) : (
-              <Text
-                style={{
-                  textAlign: "center",
-                  color: "gray",
-                  paddingVertical: 20,
-                }}
-              >
-                No packages available.
-              </Text>
-            )}
-          </View>
+              <Image
+                source={require("../../assets/images/gift.avif")}
+                style={styles.giftImage}
+              />
+            </View>
 
-          <TouchableOpacity
-            style={styles.payOfflineBtn}
-            onPress={handlePayOffline}
-          >
-            <Text style={styles.payOfflineText}>Pay Offline</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </LinearGradient>
-    </SafeAreaView>
+            <Text style={styles.heading2}>Choose your Prime Membership:</Text>
+            <View style={styles.horizontalLine} />
+
+            <View style={styles.packageList}>
+              {loading ? (
+                <View
+                  style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    paddingVertical: 20,
+                  }}
+                >
+                  <ActivityIndicator size="large" color="#fff" />
+                </View>
+              ) : packages?.length > 0 ? (
+                packages.map((pkg) => (
+                  <TouchableOpacity
+                    key={pkg.amount}
+                    style={[
+                      styles.packageItem,
+                      selectedPackage?.amount === pkg.amount &&
+                        styles.selectedPackage,
+                    ]}
+                    onPress={() => setSelectedPackage(pkg)}
+                  >
+                    <Text
+                      style={[
+                        styles.packageText,
+                        selectedPackage?.amount === pkg.amount &&
+                          styles.selectedPackageText,
+                      ]}
+                    >
+                      ₹ {pkg.amount} - {pkg.in_month} month {pkg.package_name}{" "}
+                      Package
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <Text
+                  style={{
+                    textAlign: "center",
+                    color: "gray",
+                    paddingVertical: 20,
+                  }}
+                >
+                  No packages available.
+                </Text>
+              )}
+            </View>
+
+            <TouchableOpacity
+              style={styles.payOfflineBtn}
+              onPress={handlePayOffline}
+            >
+              <Text style={styles.payOfflineText}>Pay Offline</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </LinearGradient>
+      </SafeAreaView>
+    </ProtectedRoute>
   );
 };
 

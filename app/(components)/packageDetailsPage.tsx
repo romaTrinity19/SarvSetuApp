@@ -72,7 +72,7 @@ const PackageInfoScreen = () => {
 
       {loading ? (
         <View style={styles.loader}>
-          <ActivityIndicator size="large" color="#5975D9" />
+          <ActivityIndicator size="large" color="#002B5B" />
           <Text style={{ marginTop: 10 }}>Loading package info...</Text>
         </View>
       ) : (
@@ -86,23 +86,32 @@ const PackageInfoScreen = () => {
 
                 <View style={styles.row}>
                   <Text style={styles.label}>Amount</Text>
-                  <Text style={styles.value}>{'  '}₹ {item.amount}</Text>
+                  <Text style={styles.value}>
+                    {"  "}₹ {item.amount}
+                  </Text>
                 </View>
 
                 <View style={styles.row}>
                   <Text style={styles.label}>Purchase Date</Text>
-                  <Text style={styles.value}>{'  '}{item.approve_date}</Text>
+                  <Text style={styles.value}>
+                    {"  "}
+                    {item.approve_date}
+                  </Text>
                 </View>
 
                 <View style={styles.row}>
                   <Text style={styles.label}>Expiry Date</Text>
-                  <Text style={styles.value}>{'  '}{item.Expire_Date}</Text>
+                  <Text style={styles.value}>
+                    {"  "}
+                    {item.Expire_Date}
+                  </Text>
                 </View>
 
                 <View style={styles.row}>
                   <Text style={styles.label}>Transaction ID</Text>
                   <Text style={styles.value}>
-                    {'  '}{item.transection_id || "N/A"}
+                    {"  "}
+                    {item.transection_id || "N/A"}
                   </Text>
                 </View>
 
@@ -171,7 +180,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     marginBottom: 12,
-    color: "#5975D9",
+    color: "#002B5B",
   },
   row: {
     flexDirection: "row",

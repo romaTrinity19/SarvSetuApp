@@ -2,7 +2,6 @@ import { fetchUserData } from "@/components/utils/api";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import * as FileSystem from "expo-file-system";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -18,6 +17,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+import ProtectedRoute from "./ProtectedRoute";
 //import { useDocumentStore } from '../store/useDocumentStore';
 
 const UploadDocumentScreen = () => {
@@ -105,19 +105,7 @@ const UploadDocumentScreen = () => {
     setSubmitting(true);
 
     try {
-      const fileInfo = await FileSystem.getInfoAsync(image);
-      if (!fileInfo.exists) {
-        Toast.show({
-          type: "error",
-          text1: "File Error",
-          text2: "Selected image file does not exist.",
-        });
-        setSubmitting(false);
-        return;
-      }
-
       const filename = image.split("/").pop();
-
       const formData = new FormData();
       formData.append("type", "savestatus");
       formData.append("ads_id", Array.isArray(adID) ? adID[0] : adID || "");
@@ -127,6 +115,8 @@ const UploadDocumentScreen = () => {
         name: filename || "upload.jpg",
         type: "image/jpeg",
       } as any);
+
+      console.log("formData", formData);
 
       const response = await fetch(
         "https://sarvsetu.trinitycrm.in/admin/Api/package_api.php",
@@ -180,108 +170,113 @@ const UploadDocumentScreen = () => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Ionicons
-            name="arrow-back"
-            size={24}
-            color="black"
-            onPress={() => navigation.goBack()}
-          />
-          <Text style={styles.headerTitle}>Upload ScreenShot</Text>
-        </View>
+    <ProtectedRoute>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: "#fff" }}
+        edges={["top"]}
+      >
+        <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+        <View style={styles.container}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Ionicons
+              name="arrow-back"
+              size={24}
+              color="black"
+              onPress={() => navigation.goBack()}
+            />
+            <Text style={styles.headerTitle}>Upload ScreenShot</Text>
+          </View>
 
-        {/* Text */}
-        <View style={{ marginHorizontal: 20 }}>
-          <Text style={styles.heading}>
-            Upload Screenshot of WhatsApp status for Verification
-          </Text>
-          <Text style={styles.subText}>
-            Please upload a Screenshot of WhatsApp status to verify your status
-            .
-          </Text>
-          <Text style={styles.subText}>
-            In your status must have at least 50 Views .
-          </Text>
-
-          <Text style={styles.subLabel}>Upload ScreenShot</Text>
-
-          {/* Upload Card */}
-          <TouchableOpacity
-            style={styles.uploadCard}
-            onPress={() => setModalVisible(true)}
-          >
-            {image ? (
-              <Image source={{ uri: image }} style={styles.uploadedImage} />
-            ) : (
-              <>
-                <Feather name="upload" size={30} color="#8c28eb" />
-                <Text style={styles.uploadText}>
-                  Choose a image and upload here
-                </Text>
-                <Text style={styles.formatText}>JPEG, PNG</Text>
-                <View style={styles.browseBtn}>
-                  <Text style={styles.browseText}>Browse Image</Text>
-                </View>
-              </>
-            )}
-          </TouchableOpacity>
-
-          {/* Upload Button */}
-          <TouchableOpacity
-            style={[
-              styles.uploadButton,
-              (submitting || alreadyUploaded) && { opacity: 0.6 },
-            ]}
-            onPress={handleSubmit}
-            disabled={submitting || alreadyUploaded}
-          >
-            <Text style={styles.uploadButtonText}>
-              {alreadyUploaded
-                ? "Already Uploaded"
-                : submitting
-                ? "Uploading..."
-                : "Upload Document"}
+          {/* Text */}
+          <View style={{ marginHorizontal: 20 }}>
+            <Text style={styles.heading}>
+              Upload Screenshot of WhatsApp status for Verification
             </Text>
-          </TouchableOpacity>
-        </View>
+            <Text style={styles.subText}>
+              Please upload a Screenshot of WhatsApp status to verify your
+              status .
+            </Text>
+            <Text style={styles.subText}>
+              In your status must have at least 50 Views .
+            </Text>
 
-        {/* Modal */}
-        <Modal visible={modalVisible} transparent animationType="slide">
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalCard}>
-              {/* Cross Icon */}
-              <TouchableOpacity
-                style={styles.closeIcon}
-                onPress={() => setModalVisible(false)}
-              >
-                <Ionicons name="close" size={28} color="#000" />
-              </TouchableOpacity>
-              <Text style={styles.modalTitle}>Please Select</Text>
-              <View style={styles.modalOptions}>
+            <Text style={styles.subLabel}>Upload ScreenShot</Text>
+
+            {/* Upload Card */}
+            <TouchableOpacity
+              style={styles.uploadCard}
+              onPress={() => setModalVisible(true)}
+            >
+              {image ? (
+                <Image source={{ uri: image }} style={styles.uploadedImage} />
+              ) : (
+                <>
+                  <Feather name="upload" size={30} color="#8c28eb" />
+                  <Text style={styles.uploadText}>
+                    Choose a image and upload here
+                  </Text>
+                  <Text style={styles.formatText}>JPEG, PNG</Text>
+                  <View style={styles.browseBtn}>
+                    <Text style={styles.browseText}>Browse Image</Text>
+                  </View>
+                </>
+              )}
+            </TouchableOpacity>
+
+            {/* Upload Button */}
+            <TouchableOpacity
+              style={[
+                styles.uploadButton,
+                (submitting || alreadyUploaded) && { opacity: 0.6 },
+              ]}
+              onPress={handleSubmit}
+              disabled={submitting || alreadyUploaded}
+            >
+              <Text style={styles.uploadButtonText}>
+                {alreadyUploaded
+                  ? "Already Uploaded"
+                  : submitting
+                  ? "Uploading..."
+                  : "Upload Document"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Modal */}
+          <Modal visible={modalVisible} transparent animationType="slide">
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalCard}>
+                {/* Cross Icon */}
                 <TouchableOpacity
-                  style={styles.optionBtn}
-                  onPress={() => openPicker("camera")}
+                  style={styles.closeIcon}
+                  onPress={() => setModalVisible(false)}
                 >
-                  <Ionicons name="camera-outline" size={24} color="#000" />
-                  <Text>Camera</Text>
+                  <Ionicons name="close" size={28} color="#000" />
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.optionBtn}
-                  onPress={() => openPicker("gallery")}
-                >
-                  <Ionicons name="images-outline" size={24} color="#000" />
-                  <Text>Gallery</Text>
-                </TouchableOpacity>
+                <Text style={styles.modalTitle}>Please Select</Text>
+                <View style={styles.modalOptions}>
+                  <TouchableOpacity
+                    style={styles.optionBtn}
+                    onPress={() => openPicker("camera")}
+                  >
+                    <Ionicons name="camera-outline" size={24} color="#000" />
+                    <Text>Camera</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.optionBtn}
+                    onPress={() => openPicker("gallery")}
+                  >
+                    <Ionicons name="images-outline" size={24} color="#000" />
+                    <Text>Gallery</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
-          </View>
-        </Modal>
-      </View>
-    </SafeAreaView>
+          </Modal>
+        </View>
+      </SafeAreaView>
+    </ProtectedRoute>
   );
 };
 

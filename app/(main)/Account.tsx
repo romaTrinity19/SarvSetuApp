@@ -1,14 +1,16 @@
 import {
+  fetchAllWalletData,
   fetchUserData,
   getPackageIngfo,
   getPackageIngfoForUser,
 } from "@/components/utils/api";
-import { Entypo, FontAwesome, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Image,
+  RefreshControl,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -17,6 +19,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import ProtectedRoute from "../(components)/ProtectedRoute";
 type PackageInfo = {
   is_approved: string;
   amount: string;
@@ -28,8 +31,9 @@ const AccountScreen = () => {
   const name = `${userData?.first_name} ${userData?.last_name}`;
   const [packageInfo, setPackageInfo] = useState<PackageInfo[]>([]);
   const [packageInfoUser, setPackageInfoUser] = useState<PackageInfo[]>([]);
-
+  const [wallet, setWallet] = useState<any>(null);
   const initial = name?.charAt(0).toUpperCase();
+  const [refreshing, setRefreshing] = useState(false);
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem("userData"); // userData ko local storage se hatao
@@ -64,15 +68,17 @@ const AccountScreen = () => {
     }, [])
   );
 
-  if (userData?.reg_id) {
-    getPackageIngfo(userData.reg_id)
-      .then((res) => {
-        setPackageInfo(res);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch package info", err);
-      });
-  }
+  useEffect(() => {
+    if (userData?.reg_id) {
+      getPackageIngfo(userData.reg_id)
+        .then((res) => {
+          setPackageInfo(res);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch package info", err);
+        });
+    }
+  }, []);
 
   if (userData?.reg_id) {
     getPackageIngfoForUser(userData.reg_id)
@@ -84,116 +90,159 @@ const AccountScreen = () => {
       });
   }
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadAndFetchUser();
+    await getWallet();
+
+    if (userData?.reg_id) {
+      await getPackageIngfo(userData.reg_id).then(setPackageInfo);
+      await getPackageIngfoForUser(userData.reg_id).then(setPackageInfoUser);
+    }
+    setRefreshing(false);
+  };
+
+  const getWallet = async () => {
+    try {
+      const userData = await AsyncStorage.getItem("userData");
+      if (userData) {
+        const { reg_id } = JSON.parse(userData);
+        const walletData = await fetchAllWalletData(reg_id);
+        setWallet(walletData?.total);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    getWallet();
+  }, []);
+  const subtitle = `Total Wallet Amount - ₹${wallet}`;
+  // console.log("packageInfoUser", packageInfoUser);
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.container}>
-        {/* Sticky Header */}
-        <View style={styles.headerContainer}>
-          <Text style={styles.header}>My Account</Text>
-        </View>
-
-        {/* Scrollable content below */}
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <View style={styles.profileSection}>
-            <View style={styles.avatar}>
-              {userData?.profile_image ? (
-                <Image
-                  source={{ uri: userData.profile_image }}
-                  style={styles.avatarImage}
-                />
-              ) : (
-                <Text style={styles.avatarText}>{initial}</Text>
-              )}
-            </View>
-
-            <View>
-              <Text style={styles.name}>Hello {name}</Text>
-              <Text style={styles.email}>{userData?.email}</Text>
-            </View>
+    <ProtectedRoute>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: "#fff" }}
+        edges={["top"]}
+      >
+        <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+        <View style={styles.container}>
+          {/* Sticky Header */}
+          <View style={styles.headerContainer}>
+            <Text style={styles.header}>My Account</Text>
           </View>
 
-          <TouchableOpacity
-            style={styles.listItem2}
-            onPress={() => {
-              if (packageInfoUser[0]?.is_approved == "1") {
-                router.push("/(components)/packageDetailsPage");
-              } else if (packageInfo[0]?.is_approved == "1") {
-                router.push("/(main)/Home");
-              } else {
-                router.push("/(components)/memberShip");
-              }
-            }}
+          {/* Scrollable content below */}
+          <ScrollView
+            contentContainerStyle={styles.scrollContainer}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
           >
-            <Text style={styles.title}>Buy An Subscription</Text>
-            <Text style={styles.status}>
-              Status:{" "}
-              <Text
-                style={
-                  packageInfoUser[0]?.is_approved == "1" ||
-                  packageInfo[0]?.is_approved == "1"
-                    ? styles.statusActive
-                    : styles.statusInactive
+            <View style={styles.profileSection}>
+              <View style={styles.avatar}>
+                {userData?.profile_image ? (
+                  <Image
+                    source={{ uri: userData.profile_image }}
+                    style={styles.avatarImage}
+                  />
+                ) : (
+                  <Text style={styles.avatarText}>{initial}</Text>
+                )}
+              </View>
+
+              <View>
+                <Text style={styles.name}>Hello {name}</Text>
+                <Text style={styles.email}>{userData?.email}</Text>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.listItem2}
+              onPress={() => {
+                if (packageInfoUser[0]?.is_approved == "1") {
+                  router.push("/(components)/packageDetailsPage");
+                } else if (packageInfo[0]?.is_approved == "1") {
+                  router.push("/(main)/Home");
+                } else {
+                  router.push("/(components)/memberShip");
                 }
-              >
-                {packageInfoUser[0]?.is_approved == "1" ||
-                packageInfo[0]?.is_approved == "1"
-                  ? "Active"
-                  : "Inactive"}
+              }}
+            >
+              <Text style={styles.title}>Buy An Subscription</Text>
+              <Text style={styles.status}>
+                Status:{" "}
+                <Text
+                  style={
+                    packageInfoUser[0]?.is_approved == "1" ||
+                    packageInfo[0]?.is_approved == "1"
+                      ? styles.statusActive
+                      : styles.statusInactive
+                  }
+                >
+                  {packageInfoUser[0]?.is_approved == "1" ||
+                  packageInfo[0]?.is_approved == "1"
+                    ? "Active"
+                    : "Inactive"}
+                </Text>
               </Text>
-            </Text>
-          </TouchableOpacity>
+            </TouchableOpacity>
 
-          <MenuItem
-            title="Edit Profile"
-            subtitle="Update your information"
-            route="/(components)/editProfile"
-          />
-          <MenuItem
-            title="Wallet"
-            subtitle="Total Wallet Amount - ₹ 1500"
-            route="/(components)/wallet"
-            highlightAmount={true}
-          />
+            <MenuItem
+              title="Edit Profile"
+              subtitle="Update your information"
+              route="/(components)/editProfile"
+            />
+            <MenuItem
+              title="Wallet"
+              subtitle={subtitle}
+              route="/(components)/wallet"
+              highlightAmount={true}
+            />
 
-          <MenuItem
-            title="About Us"
-            subtitle="Get to Know Us"
-            route="/(components)/aboutUs"
-          />
-          <MenuItem
-            title="Privacy Policy"
-            subtitle="How we use your information"
-            route="/(components)/privacyPolicy"
-          />
-          <MenuItem
-            title="Cancellation Policy"
-            subtitle="Cancellation Support Info"
-            route="/(components)/cancellationPolicy"
-          />
-          <MenuItem
-            title="Help"
-            subtitle="Learn Easily with Video Guides"
-            route="/(components)/help"
-          />
-          <MenuItem
-            title="Contact Us"
-            subtitle="Reach us anytime, anywhere!"
-            route="/(components)/contactUs"
-          />
+            <MenuItem
+              title="About Us"
+              subtitle="Get to Know Us"
+              route="/(components)/aboutUs"
+            />
+            <MenuItem
+              title="Privacy Policy"
+              subtitle="How we use your information"
+              route="/(components)/privacyPolicy"
+            />
+            <MenuItem
+              title="Cancellation Policy"
+              subtitle="Cancellation Support Info"
+              route="/(components)/cancellationPolicy"
+            />
+            <MenuItem
+              title="Help"
+              subtitle="Learn Easily with Video Guides"
+              route="/(components)/help"
+            />
+            <MenuItem
+              title="Contact Us"
+              subtitle="Reach us anytime, anywhere!"
+              route="/(components)/contactUs"
+            />
 
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutText}>Log out</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+            >
+              <Text style={styles.logoutText}>Log out</Text>
+            </TouchableOpacity>
 
-          {/* <View style={styles.socialContainer}>
+            {/* <View style={styles.socialContainer}>
             <FontAwesome name="instagram" size={24} style={styles.socialIcon} />
             <Entypo name="facebook" size={24} style={styles.socialIcon} />
             <Ionicons name="logo-twitter" size={24} style={styles.socialIcon} />
           </View> */}
-        </ScrollView>
-      </View>
-    </SafeAreaView>
+          </ScrollView>
+        </View>
+      </SafeAreaView>
+    </ProtectedRoute>
   );
 };
 

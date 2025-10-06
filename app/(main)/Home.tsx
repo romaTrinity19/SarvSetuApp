@@ -1,19 +1,13 @@
 import {
   fetchBannerImages,
   fetchUserData,
-  getPackageIngfo,
   getPackageIngfoForUser,
 } from "@/components/utils/api";
-import { FontAwesome, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Asset } from "expo-asset";
-import {
-  router,
-  useFocusEffect,
-  useLocalSearchParams,
-  useRouter,
-} from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import * as Sharing from "expo-sharing";
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -21,17 +15,15 @@ import {
   Dimensions,
   FlatList,
   Image,
-  ImageBackground,
   Modal,
-  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import Carousel from "react-native-reanimated-carousel";
 import { SafeAreaView } from "react-native-safe-area-context";
+import ProtectedRoute from "../(components)/ProtectedRoute";
 
 const { width } = Dimensions.get("window");
 
@@ -83,7 +75,7 @@ const AdCard: React.FC<AdCardProps> = ({ imageSrc, payout, userData, id }) => {
   useFocusEffect(
     useCallback(() => {
       if (uploaded === "true") {
-        setUploadDisabled(true); // ✅ Disable button if upload was done
+        setUploadDisabled(true);
       }
     }, [uploaded])
   );
@@ -230,136 +222,136 @@ const AdCard: React.FC<AdCardProps> = ({ imageSrc, payout, userData, id }) => {
   );
 };
 
-const VendorWelcomeScreen = ({
-  userData,
-  banners,
-}: {
-  userData: any;
-  banners: any;
-}) => {
-  const router = useRouter();
-  const [packageInfo, setPackageInfo] = useState<any[]>([]);
+// const VendorWelcomeScreen = ({
+//   userData,
+//   banners,
+// }: {
+//   userData: any;
+//   banners: any;
+// }) => {
+//   const router = useRouter();
+//   const [packageInfo, setPackageInfo] = useState<any[]>([]);
 
-  if (userData?.reg_id) {
-    getPackageIngfo(userData.reg_id)
-      .then((res) => {
-        setPackageInfo(res);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch package info", err);
-      });
-  }
+//   if (userData?.reg_id) {
+//     getPackageIngfo(userData.reg_id)
+//       .then((res) => {
+//         setPackageInfo(res);
+//       })
+//       .catch((err) => {
+//         console.error("Failed to fetch package info", err);
+//       });
+//   }
 
-  return (
-    <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
-      <View
-        style={{
-          flex: 1,
+//   return (
+//     <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
+//       <View
+//         style={{
+//           flex: 1,
 
-          alignItems: "center",
-          // paddingTop: 10,
-        }}
-      >
-        <Carousel
-          width={width * 1}
-          height={200}
-          autoPlay
-          data={banners}
-          scrollAnimationDuration={1000}
-          renderItem={({ item }) => (
-            <View style={styles.slide}>
-              <ImageBackground
-                source={{ uri: item as string }}
-                style={styles.image2}
-                //imageStyle={{ borderRadius: 15 }}
-              ></ImageBackground>
-            </View>
-          )}
-          style={{ marginTop: 30 }}
-          loop
-        />
+//           alignItems: "center",
+//           // paddingTop: 10,
+//         }}
+//       >
+//         {/* <Carousel
+//           width={width * 1}
+//           height={200}
+//           autoPlay
+//           data={banners}
+//           scrollAnimationDuration={1000}
+//           renderItem={({ item }) => (
+//             <View style={styles.slide}>
+//               <ImageBackground
+//                 source={{ uri: item as string }}
+//                 style={styles.image2}
+//                 //imageStyle={{ borderRadius: 15 }}
+//               ></ImageBackground>
+//             </View>
+//           )}
+//           style={{ marginTop: 30 }}
+//           loop
+//         /> */}
 
-        <Text style={styles.welcome}>
-          👋 Welcome, {`${userData.first_name} ${userData.last_name}`}!
-        </Text>
-        <Text style={styles.description}>
-          🚀 We're thrilled to have you onboard. Start showcasing your products
-          and reach customers instantly!
-        </Text>
+//         <Text style={styles.welcome}>
+//           👋 Welcome, {`${userData.first_name} ${userData.last_name}`}!
+//         </Text>
+//         <Text style={styles.description}>
+//           🚀 We're thrilled to have you onboard. Start showcasing your products
+//           and reach customers instantly!
+//         </Text>
 
-        <View style={styles.packageBox}>
-          {packageInfo[0]?.is_approved === "1" ? (
-            <>
-              <Text style={styles.packageTitle}>
-                🎉 Premium Package Activated!
-              </Text>
-              <Text style={styles.packageText}>
-                💰 <Text style={styles.bold}>Package Amount:</Text> ₹
-                {packageInfo[0].amount}
-              </Text>
-              <Text style={styles.packageText}>
-                📦 <Text style={styles.bold}>Ads Allowed:</Text>{" "}
-                {packageInfo[0].peradd}
-              </Text>
-              <Text style={styles.statusText}>
-                🟢 <Text style={styles.bold}>Status:</Text>{" "}
-                <Text style={styles.statusActive}>Active</Text>
-              </Text>
-              <Text style={styles.packageText}>
-                ✅ Enjoy your benefits and manage your ads like a pro!
-              </Text>
-              {packageInfo[0].remaining_ads == "0" &&
-                packageInfo[0]?.is_approved === "1" && (
-                  <TouchableOpacity
-                    style={styles.buttonPrimary}
-                    onPress={() =>
-                      router.push("/(components)/vendorMembership")
-                    }
-                  >
-                    <Text style={styles.buttonText2}>💳 Buy New Package</Text>
-                  </TouchableOpacity>
-                )}
+//         <View style={styles.packageBox}>
+//           {packageInfo[0]?.is_approved === "1" ? (
+//             <>
+//               <Text style={styles.packageTitle}>
+//                 🎉 Premium Package Activated!
+//               </Text>
+//               <Text style={styles.packageText}>
+//                 💰 <Text style={styles.bold}>Package Amount:</Text> ₹
+//                 {packageInfo[0].amount}
+//               </Text>
+//               <Text style={styles.packageText}>
+//                 📦 <Text style={styles.bold}>Ads Allowed:</Text>{" "}
+//                 {packageInfo[0].peradd}
+//               </Text>
+//               <Text style={styles.statusText}>
+//                 🟢 <Text style={styles.bold}>Status:</Text>{" "}
+//                 <Text style={styles.statusActive}>Active</Text>
+//               </Text>
+//               <Text style={styles.packageText}>
+//                 ✅ Enjoy your benefits and manage your ads like a pro!
+//               </Text>
+//               {packageInfo[0].remaining_ads == "0" &&
+//                 packageInfo[0]?.is_approved === "1" && (
+//                   <TouchableOpacity
+//                     style={styles.buttonPrimary}
+//                     onPress={() =>
+//                       router.push("/(components)/vendorMembership")
+//                     }
+//                   >
+//                     <Text style={styles.buttonText2}>💳 Buy New Package</Text>
+//                   </TouchableOpacity>
+//                 )}
 
-              {packageInfo[0].remaining_ads > "0" && (
-                <TouchableOpacity
-                  style={[styles.buttonPrimary, { marginTop: 12 }]}
-                  onPress={() => router.push("/(components)/createShop")}
-                >
-                  <Text style={styles.buttonText2}>⚙️ Create Ads</Text>
-                </TouchableOpacity>
-              )}
+//               {packageInfo[0].remaining_ads > "0" && (
+//                 <TouchableOpacity
+//                   style={[styles.buttonPrimary, { marginTop: 12 }]}
+//                   onPress={() => router.push("/(components)/createShop")}
+//                 >
+//                   <Text style={styles.buttonText2}>⚙️ Create Ads</Text>
+//                 </TouchableOpacity>
+//               )}
 
-              <TouchableOpacity
-                style={[styles.buttonSecondary, { marginTop: 10 }]}
-                onPress={() => router.push("/(components)/vendorAdsData")}
-              >
-                <Text style={styles.buttonText2}>📊 My Ads</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              <Text style={styles.packageTitle}>🎯 Want to grow faster?</Text>
-              <Text style={styles.packageText}>
-                Buy a premium package to unlock powerful features and boost your
-                reach today! 📈
-              </Text>
-              <Text style={styles.statusText}>
-                🔴 <Text style={styles.bold}>Status:</Text>{" "}
-                <Text style={styles.statusInactive}>Inactive</Text>
-              </Text>
-              <TouchableOpacity
-                style={styles.buttonPrimary}
-                onPress={() => router.push("/(components)/vendorMembership")}
-              >
-                <Text style={styles.buttonText2}>💳 Buy Package</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-      </View>
-    </ScrollView>
-  );
-};
+//               <TouchableOpacity
+//                 style={[styles.buttonSecondary, { marginTop: 10 }]}
+//                 onPress={() => router.push("/(components)/vendorAdsData")}
+//               >
+//                 <Text style={styles.buttonText2}>📊 My Ads</Text>
+//               </TouchableOpacity>
+//             </>
+//           ) : (
+//             <>
+//               <Text style={styles.packageTitle}>🎯 Want to grow faster?</Text>
+//               <Text style={styles.packageText}>
+//                 Buy a premium package to unlock powerful features and boost your
+//                 reach today! 📈
+//               </Text>
+//               <Text style={styles.statusText}>
+//                 🔴 <Text style={styles.bold}>Status:</Text>{" "}
+//                 <Text style={styles.statusInactive}>Inactive</Text>
+//               </Text>
+//               <TouchableOpacity
+//                 style={styles.buttonPrimary}
+//                 onPress={() => router.push("/(components)/vendorMembership")}
+//               >
+//                 <Text style={styles.buttonText2}>💳 Buy Package</Text>
+//               </TouchableOpacity>
+//             </>
+//           )}
+//         </View>
+//       </View>
+//     </ScrollView>
+//   );
+// };
 
 const Header = ({ userData }: { userData: any }) => {
   const firstName = userData?.first_name || "";
@@ -462,8 +454,6 @@ const App = () => {
     }
   };
 
-  console.log('adsssssss', ads)
-  
   const handleRefresh = async () => {
     setRefreshing(true);
     await Promise.all([
@@ -473,72 +463,81 @@ const App = () => {
     ]);
     setRefreshing(false);
   };
- 
 
   if (loading || !userData) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" />
-      </View>
+      <ProtectedRoute>
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <ActivityIndicator size="large" />
+        </View>
+      </ProtectedRoute>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={{ flex: 1 }}>
-        <Header userData={userData} />
+    <ProtectedRoute>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: "#fff" }}
+        edges={["top"]}
+      >
+        <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+        <View style={{ flex: 1 }}>
+          <Header userData={userData} />
 
-        {userData.role === "user" ? (
-          <FlatList
-            data={ads}
-            keyExtractor={(item) => item.ads_id.toString()}
-            ListHeaderComponent={() => (
-              <Carousel
-                width={width}
-                height={200}
-                autoPlay
-                data={banners}
-                scrollAnimationDuration={1000}
-                renderItem={({ item }) => (
-                  <View style={styles.slide}>
-                    <ImageBackground
-                      source={{ uri: item as string }}
-                      style={styles.image2}
-                    />
-                  </View>
-                )}
-                style={{ marginTop: 10 }}
-                loop
-              />
-            )}
-            renderItem={({ item }) => (
-              <AdCard
-                imageSrc={item.imagepath}
-                payout={item.payamt}
-                subscription={item?.is_subscribe}
-                userData={userData}
-                id={item.ads_id}
-              />
-            )}
-            contentContainerStyle={{ paddingBottom: 80 }}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              <Text style={{ textAlign: "center", marginTop: 20 }}>
-                No Ads Available
-              </Text>
-            }
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-          />
-        ) : (
-          <VendorWelcomeScreen userData={userData} banners={banners} />
-        )}
-      </View>
-    </SafeAreaView>
+          {userData.role === "user" ? (
+            <FlatList
+              data={ads}
+              keyExtractor={(item) => item.ads_id.toString()}
+              // ListHeaderComponent={() => (
+              //   <Carousel
+              //     width={width}
+              //     height={200}
+              //     autoPlay
+              //     data={banners}
+              //     scrollAnimationDuration={1000}
+              //     renderItem={({ item }) => (
+              //       <View style={styles.slide}>
+              //         <ImageBackground
+              //           source={{ uri: item as string }}
+              //           style={styles.image2}
+              //         />
+              //       </View>
+              //     )}
+              //     style={{ marginTop: 10 }}
+              //     loop
+              //   />
+              // )}
+              renderItem={({ item }) => (
+                <AdCard
+                  imageSrc={item.imagepath}
+                  payout={item.payamt}
+                  subscription={item?.is_subscribe}
+                  userData={userData}
+                  id={item.ads_id}
+                />
+              )}
+              contentContainerStyle={{ paddingBottom: 80 }}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={
+                <Text style={{ textAlign: "center", marginTop: 20 }}>
+                  No Ads Available
+                </Text>
+              }
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+            />
+          ) : (
+            // <VendorWelcomeScreen userData={userData} banners={banners} />
+            <Text>Hello</Text>
+          )}
+        </View>
+      </SafeAreaView>
+    </ProtectedRoute>
   );
 };
-
+export default App;
 const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: "row",
@@ -800,5 +799,3 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
-
-export default App;

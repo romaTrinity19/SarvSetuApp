@@ -5,7 +5,7 @@ import {
   MaterialIcons,
 } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as FileSystem from "expo-file-system";
+
 import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import { ImagePickerAsset } from "expo-image-picker";
@@ -26,6 +26,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+import ProtectedRoute from "./ProtectedRoute";
 
 type PaymentData = {
   bank_id: string;
@@ -75,8 +76,8 @@ export default function PaymentInformation() {
     if (!transactionId.trim()) {
       Toast.show({
         type: "error",
-        text1: "Missing Transaction ID",
-        text2: "Please enter your Transaction ID.",
+        text1: "Missing UPI ID",
+        text2: "Please enter your UPI ID.",
         position: "top",
       });
       return;
@@ -102,23 +103,10 @@ export default function PaymentInformation() {
       return;
     }
 
-    // ✅ Verify that file exists
-    const fileInfo = await FileSystem.getInfoAsync(selectedImage.uri);
-    if (!fileInfo.exists) {
-      Toast.show({
-        type: "error",
-        text1: "File Error",
-        text2: "Selected image file does not exist.",
-        position: "top",
-      });
-      return;
-    }
-
-    // ✅ Prepare FormData
     const formData = new FormData();
     formData.append("reg_id", userData?.reg_id.toString());
-    formData.append("packege_id", selectedPackage?.package_id.toString()); // spelling matches backend
-    formData.append("transection_id", transactionId); // spelling matches backend
+    formData.append("packege_id", selectedPackage?.package_id.toString());
+    formData.append("transection_id", transactionId);
     formData.append("type", "bypackege");
 
     formData.append("image", {
@@ -126,7 +114,9 @@ export default function PaymentInformation() {
       name: selectedImage.fileName || "screenshot.jpg",
       type: "image/jpeg",
     } as any);
+
     setLoading(true);
+    //console.log("formData", formData);
     try {
       const response = await fetch(
         "https://sarvsetu.trinitycrm.in/admin/Api/package_api.php",
@@ -142,6 +132,7 @@ export default function PaymentInformation() {
       const textResult = await response.text();
 
       const json = JSON.parse(textResult);
+      // console.error("Payment verify error textResulttextResult:", textResult);
 
       if (response.ok && json.status === "success") {
         Toast.show({
@@ -164,7 +155,7 @@ export default function PaymentInformation() {
         });
       }
     } catch (error) {
-      console.error("Payment verify error:", error);
+      //console.error("Payment verify error:", error);
       Toast.show({
         type: "error",
         text1: "Network Error",
@@ -245,238 +236,245 @@ export default function PaymentInformation() {
   }, []);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" color="#000" size={24} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Payment Information</Text>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.selectedPackageBox}>
-          <Text style={styles.packageHeading}>🎉 Great Choice!</Text>
-          <Text style={styles.packageSubtext}>
-            You’ve chosen the{" "}
-            <Text style={styles.packageLabel}>
-              {selectedPackage?.type === "user"
-                ? `${selectedPackage?.in_month} - Month`
-                : `${selectedPackage?.peradd} - Ads`}
-            </Text>{" "}
-            <Text style={styles.packageLabel}>
-              {selectedPackage?.package_name}
-            </Text>{" "}
-            plan for just{" "}
-            <Text style={styles.packageLabel}>
-              {" "}
-              ₹ {selectedPackage?.amount}
-            </Text>
-            !
-          </Text>
-          <Text style={styles.packageSubtext}>
-            Unlock premium features and enjoy exclusive benefits throughout your
-            subscription period.
-          </Text>
+    <ProtectedRoute>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: "#fff" }}
+        edges={["top"]}
+      >
+        <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+        <View style={styles.headerContainer}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="arrow-back" color="#000" size={24} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Payment Information</Text>
         </View>
 
-        <Text style={styles.pageTitle}>Payment Information </Text>
-        <Text style={styles.pageSub}>
-          Choose any method below to complete your payment.
-        </Text>
-
-        {/* QR Payment */}
-        <View style={styles.paymentCard}>
-          <TouchableOpacity
-            onPress={() => handleSelect("qr")}
-            style={styles.cardHeader}
-          >
-            <View style={styles.cardHeaderLeft}>
-              <Ionicons
-                name="qr-code"
-                size={28}
-                color="#000"
-                style={styles.icon}
-              />
-              <View>
-                <Text style={styles.methodTitle}>QR Code</Text>
-                <Text style={styles.methodSub}>Quick Payment via QR Code</Text>
-              </View>
-            </View>
-
-            <Feather
-              name={selectedMethod === "qr" ? "chevron-up" : "chevron-down"}
-              size={20}
-              color="#6b7280"
-            />
-          </TouchableOpacity>
-          {selectedMethod === "qr" && (
-            <View style={styles.cardContent}>
-              {paymentData && (
-                <Image
-                  source={{ uri: paymentData.qrcode }}
-                  style={styles.qrImage}
-                />
-              )}
-              <Text style={styles.note}>
-                Scan this code using your payment app to send your payment
-                instantly.
+        <ScrollView contentContainerStyle={styles.container}>
+          <View style={styles.selectedPackageBox}>
+            <Text style={styles.packageHeading}>🎉 Great Choice!</Text>
+            <Text style={styles.packageSubtext}>
+              You’ve chosen the{" "}
+              <Text style={styles.packageLabel}>
+                {selectedPackage?.type === "user"
+                  ? `${selectedPackage?.in_month} - Month`
+                  : `${selectedPackage?.peradd} - Ads`}
+              </Text>{" "}
+              <Text style={styles.packageLabel}>
+                {selectedPackage?.package_name}
+              </Text>{" "}
+              plan for just{" "}
+              <Text style={styles.packageLabel}>
+                {" "}
+                ₹ {selectedPackage?.amount}
               </Text>
-            </View>
-          )}
-        </View>
+              !
+            </Text>
+            <Text style={styles.packageSubtext}>
+              Unlock premium features and enjoy exclusive benefits throughout
+              your subscription period.
+            </Text>
+          </View>
 
-        {/* UPI Payment */}
-        <View style={styles.paymentCard}>
-          <TouchableOpacity
-            onPress={() => handleSelect("upi")}
-            style={styles.cardHeader}
-          >
-            <View style={styles.cardHeaderLeft}>
-              <MaterialIcons
-                name="sensor-occupied"
-                size={24}
-                color="black"
-                style={styles.icon}
+          <Text style={styles.pageTitle}>Payment Information </Text>
+          <Text style={styles.pageSub}>
+            Choose any method below to complete your payment.
+          </Text>
+
+          {/* QR Payment */}
+          <View style={styles.paymentCard}>
+            <TouchableOpacity
+              onPress={() => handleSelect("qr")}
+              style={styles.cardHeader}
+            >
+              <View style={styles.cardHeaderLeft}>
+                <Ionicons
+                  name="qr-code"
+                  size={28}
+                  color="#000"
+                  style={styles.icon}
+                />
+                <View>
+                  <Text style={styles.methodTitle}>QR Code</Text>
+                  <Text style={styles.methodSub}>
+                    Quick Payment via QR Code
+                  </Text>
+                </View>
+              </View>
+
+              <Feather
+                name={selectedMethod === "qr" ? "chevron-up" : "chevron-down"}
+                size={20}
+                color="#6b7280"
               />
-
-              <View>
-                <Text style={styles.methodTitle}>UPI payment</Text>
-                <Text style={styles.methodSub}>Quick Payment via UPI</Text>
-              </View>
-            </View>
-
-            <Feather
-              name={selectedMethod === "upi" ? "chevron-up" : "chevron-down"}
-              size={20}
-              color="#6b7280"
-            />
-          </TouchableOpacity>
-          {selectedMethod === "upi" && (
-            <View style={styles.cardContent}>
-              <View style={styles.detailRow}>
-                <Text>{paymentData?.upi_id}</Text>
-                <TouchableOpacity
-                  onPress={() => copyToClipboard(paymentData?.upi_id)}
-                >
-                  <Feather name="copy" size={24} color="#000" />
-                </TouchableOpacity>
-              </View>
-              <View style={styles.detailRow}>
-                <Text>{paymentData?.upi_id2}</Text>
-                <TouchableOpacity
-                  onPress={() => copyToClipboard(paymentData?.upi_id2)}
-                >
-                  <Feather name="copy" size={24} color="#000" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-        </View>
-
-        {/* Bank Transfer */}
-        <View style={styles.paymentCard}>
-          <TouchableOpacity
-            onPress={() => handleSelect("bank")}
-            style={styles.cardHeader}
-          >
-            <View style={styles.cardHeaderLeft}>
-              <FontAwesome
-                name="bank"
-                size={24}
-                color="black"
-                style={styles.icon}
-              />
-
-              <View>
-                <Text style={styles.methodTitle}>Bank Transfer</Text>
-                <Text style={styles.methodSub}>
-                  Transfer funds directly using the details below
+            </TouchableOpacity>
+            {selectedMethod === "qr" && (
+              <View style={styles.cardContent}>
+                {paymentData && (
+                  <Image
+                    source={{ uri: paymentData.qrcode }}
+                    style={styles.qrImage}
+                  />
+                )}
+                <Text style={styles.note}>
+                  Scan this code using your payment app to send your payment
+                  instantly.
                 </Text>
               </View>
-            </View>
-            <Feather
-              name={selectedMethod === "bank" ? "chevron-up" : "chevron-down"}
-              size={20}
-              color="#6b7280"
-            />
+            )}
+          </View>
+
+          {/* UPI Payment */}
+          <View style={styles.paymentCard}>
+            <TouchableOpacity
+              onPress={() => handleSelect("upi")}
+              style={styles.cardHeader}
+            >
+              <View style={styles.cardHeaderLeft}>
+                <MaterialIcons
+                  name="sensor-occupied"
+                  size={24}
+                  color="black"
+                  style={styles.icon}
+                />
+
+                <View>
+                  <Text style={styles.methodTitle}>UPI payment</Text>
+                  <Text style={styles.methodSub}>Quick Payment via UPI</Text>
+                </View>
+              </View>
+
+              <Feather
+                name={selectedMethod === "upi" ? "chevron-up" : "chevron-down"}
+                size={20}
+                color="#6b7280"
+              />
+            </TouchableOpacity>
+            {selectedMethod === "upi" && (
+              <View style={styles.cardContent}>
+                <View style={styles.detailRow}>
+                  <Text>{paymentData?.upi_id}</Text>
+                  <TouchableOpacity
+                    onPress={() => copyToClipboard(paymentData?.upi_id)}
+                  >
+                    <Feather name="copy" size={24} color="#000" />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.detailRow}>
+                  <Text>{paymentData?.upi_id2}</Text>
+                  <TouchableOpacity
+                    onPress={() => copyToClipboard(paymentData?.upi_id2)}
+                  >
+                    <Feather name="copy" size={24} color="#000" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
+
+          {/* Bank Transfer */}
+          <View style={styles.paymentCard}>
+            <TouchableOpacity
+              onPress={() => handleSelect("bank")}
+              style={styles.cardHeader}
+            >
+              <View style={styles.cardHeaderLeft}>
+                <FontAwesome
+                  name="bank"
+                  size={24}
+                  color="black"
+                  style={styles.icon}
+                />
+
+                <View>
+                  <Text style={styles.methodTitle}>Bank Transfer</Text>
+                  <Text style={styles.methodSub}>
+                    Transfer funds directly using the details below
+                  </Text>
+                </View>
+              </View>
+              <Feather
+                name={selectedMethod === "bank" ? "chevron-up" : "chevron-down"}
+                size={20}
+                color="#6b7280"
+              />
+            </TouchableOpacity>
+            {selectedMethod === "bank" && (
+              <View style={styles.cardContent}>
+                <View style={styles.detailRow}>
+                  <Text>Ac No - {paymentData?.account_numbar}</Text>
+                  <TouchableOpacity
+                    onPress={() => copyToClipboard(paymentData?.account_numbar)}
+                  >
+                    <Feather name="copy" size={24} color="#000" />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.detailRow}>
+                  <Text>IFSC Code {paymentData?.ifsc_code}</Text>
+                  <TouchableOpacity
+                    onPress={() => copyToClipboard(paymentData?.ifsc_code)}
+                  >
+                    <Feather name="copy" size={24} color="#000" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
+
+          {/* Verify Button */}
+          <TouchableOpacity
+            style={styles.verifyButton2}
+            onPress={() => setModalVisible(true)}
+          >
+            <Text style={styles.verifyButtonText}>Verify Payment</Text>
           </TouchableOpacity>
-          {selectedMethod === "bank" && (
-            <View style={styles.cardContent}>
-              <View style={styles.detailRow}>
-                <Text>Ac No - {paymentData?.account_numbar}</Text>
-                <TouchableOpacity
-                  onPress={() => copyToClipboard(paymentData?.account_numbar)}
-                >
-                  <Feather name="copy" size={24} color="#000" />
+        </ScrollView>
+
+        <Modal animationType="slide" transparent={true} visible={modalVisible}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Add Bank Detail</Text>
+                <TouchableOpacity onPress={() => setModalVisible(false)}>
+                  <Feather name="x" size={24} color="#000" />
                 </TouchableOpacity>
               </View>
-              <View style={styles.detailRow}>
-                <Text>IFSC Code {paymentData?.ifsc_code}</Text>
-                <TouchableOpacity
-                  onPress={() => copyToClipboard(paymentData?.ifsc_code)}
-                >
-                  <Feather name="copy" size={24} color="#000" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-        </View>
+              <Text style={styles.inputLabel}>UPI ID</Text>
+              <TextInput
+                value={transactionId}
+                onChangeText={setTransactionId}
+                placeholder="Enter UPI ID"
+                placeholderTextColor="#555"
+                style={styles.textInput}
+              />
+              <TouchableOpacity style={styles.uploadButton} onPress={pickImage}>
+                <Text style={styles.uploadButtonText}>
+                  Upload Payment Screenshot
+                </Text>
+              </TouchableOpacity>
 
-        {/* Verify Button */}
-        <TouchableOpacity
-          style={styles.verifyButton2}
-          onPress={() => setModalVisible(true)}
-        >
-          <Text style={styles.verifyButtonText}>Verify Payment</Text>
-        </TouchableOpacity>
-      </ScrollView>
-
-      <Modal animationType="slide" transparent={true} visible={modalVisible}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add Transaction Detail</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Feather name="x" size={24} color="#000" />
+              {selectedImage && (
+                <Image
+                  source={{ uri: selectedImage.uri }}
+                  style={styles.previewImage}
+                  resizeMode="contain"
+                />
+              )}
+              <TouchableOpacity
+                style={styles.verifyButton}
+                onPress={handleVerify}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.verifyButtonText}>Verify Payment</Text>
+                )}
               </TouchableOpacity>
             </View>
-            <Text style={styles.inputLabel}>Transaction ID</Text>
-            <TextInput
-              value={transactionId}
-              onChangeText={setTransactionId}
-              placeholder="Enter Transaction ID"
-              placeholderTextColor="#555"
-              style={styles.textInput}
-            />
-            <TouchableOpacity style={styles.uploadButton} onPress={pickImage}>
-              <Text style={styles.uploadButtonText}>
-                Upload Payment Screenshot
-              </Text>
-            </TouchableOpacity>
-
-            {selectedImage && (
-              <Image
-                source={{ uri: selectedImage.uri }}
-                style={styles.previewImage}
-                resizeMode="contain"
-              />
-            )}
-            <TouchableOpacity
-              style={styles.verifyButton}
-              onPress={handleVerify}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.verifyButtonText}>Verify Payment</Text>
-              )}
-            </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
-    </SafeAreaView>
+        </Modal>
+      </SafeAreaView>
+    </ProtectedRoute>
   );
 }
 

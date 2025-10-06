@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Picker } from "@react-native-picker/picker";
 import axios from "axios";
 import * as FileSystem from "expo-file-system";
+import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -21,12 +22,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import * as ImageManipulator from "expo-image-manipulator";
+import ProtectedRoute from "./ProtectedRoute";
 
 type PasswordInputProps = {
   placeholder: string;
   value: string;
-   placeholderTextColor:string
+  placeholderTextColor: string;
   onChangeText: (text: string) => void;
   show: boolean;
   toggleShow: () => void;
@@ -297,174 +298,179 @@ const EditProfileScreen = () => {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.container2}>
-        <View
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 5,
-            paddingLeft: 10,
-            paddingVertical: 15,
-          }}
-        >
-          <TouchableOpacity onPress={() => router.back()}>
-            <Feather name="arrow-left" size={24} color="#000" />
-          </TouchableOpacity>
-          <Text style={styles.header}>Edit Profile</Text>
-        </View>
-        <ScrollView
-          style={styles.container}
-          contentContainerStyle={{ paddingBottom: 40 }}
-        >
-          <View style={styles.avatarContainer}>
-            <TouchableOpacity style={styles.avatarCircle} onPress={pickImage}>
-              {selectedImage ? (
-                <Image
-                  source={{ uri: selectedImage.uri }}
-                  style={styles.avatarImage}
-                />
-              ) : (
-                <>
-                  <Image
-                    source={{
-                      uri: userData?.profile_image
-                        ? userData?.profile_image
-                        : "https://cdn-icons-png.flaticon.com/512/149/149071.png",
-                    }}
-                    style={styles.defaultAvatarImage}
-                  />
-
-                  <View style={styles.cameraIcon}>
-                    <Ionicons name="camera" size={16} color="#000" />
-                  </View>
-                </>
-              )}
+    <ProtectedRoute>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: "#fff" }}
+        edges={["top"]}
+      >
+        <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+        <View style={styles.container2}>
+          <View
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 5,
+              paddingLeft: 10,
+              paddingVertical: 15,
+            }}
+          >
+            <TouchableOpacity onPress={() => router.back()}>
+              <Feather name="arrow-left" size={24} color="#000" />
             </TouchableOpacity>
+            <Text style={styles.header}>Edit Profile</Text>
           </View>
+          <ScrollView
+            style={styles.container}
+            contentContainerStyle={{ paddingBottom: 40 }}
+          >
+            <View style={styles.avatarContainer}>
+              <TouchableOpacity style={styles.avatarCircle} onPress={pickImage}>
+                {selectedImage ? (
+                  <Image
+                    source={{ uri: selectedImage.uri }}
+                    style={styles.avatarImage}
+                  />
+                ) : (
+                  <>
+                    <Image
+                      source={{
+                        uri: userData?.profile_image
+                          ? userData?.profile_image
+                          : "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+                      }}
+                      style={styles.defaultAvatarImage}
+                    />
 
-          <View style={styles.row}>
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>First Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="First Name"
-                 placeholderTextColor="#555"
-                value={firstName}
-                onChangeText={setFirstName}
-              />
+                    <View style={styles.cameraIcon}>
+                      <Ionicons name="camera" size={16} color="#000" />
+                    </View>
+                  </>
+                )}
+              </TouchableOpacity>
             </View>
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Last Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Last Name"
-                 placeholderTextColor="#555"
-                value={lastName}
-                onChangeText={setLastName}
-              />
-            </View>
-          </View>
-          <Text style={styles.label}>Email Address</Text>
-          <TextInput
-            style={styles.inputFull}
-            placeholder="Email Address"
-             placeholderTextColor="#555"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            editable={false}
-          />
-          <Text style={styles.label}>Phone Number</Text>
 
-          <View style={styles.row}>
-            <TextInput
-              style={[styles.input, { flex: 1 }]}
-              value="+91"
-              editable={false}
-            />
-            <TextInput
-              style={[styles.input, { flex: 3 }]}
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              editable={false}
-            />
-          </View>
-          <Text style={styles.label}>State</Text>
-          <View style={styles.pickerWrapper}>
-            <Picker
-              selectedValue={selectedState}
-              onValueChange={(itemValue) => setSelectedState(itemValue)}
-            >
-              <Picker.Item label="--Select State--" value="" />
-              {states.map((st) => (
-                <Picker.Item
-                  key={st.id}
-                  label={st?.state_name}
-                  value={st?.id}
+            <View style={styles.row}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>First Name</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="First Name"
+                  placeholderTextColor="#555"
+                  value={firstName}
+                  onChangeText={setFirstName}
                 />
-              ))}
-            </Picker>
-          </View>
-          <Text style={styles.sectionHeader}>Change Password</Text>
-
-          <Text style={styles.label}>Old Password</Text>
-          <PasswordInput
-            placeholder="Old Password"
-             placeholderTextColor="#555"
-            value={oldPassword}
-            onChangeText={setOldPassword}
-            show={showPassword.old}
-            toggleShow={() =>
-              setShowPassword({ ...showPassword, old: !showPassword.old })
-            }
-          />
-
-          <Text style={styles.label}>New Password</Text>
-          <PasswordInput
-            placeholder="New Password"
-             placeholderTextColor="#555"
-            value={newPassword}
-            onChangeText={setNewPassword}
-            show={showPassword.new}
-            toggleShow={() =>
-              setShowPassword({ ...showPassword, new: !showPassword.new })
-            }
-          />
-          <Text style={styles.label}>Confirm New Password</Text>
-          <PasswordInput
-            placeholder="Confirm New Password"
+              </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Last Name</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Last Name"
+                  placeholderTextColor="#555"
+                  value={lastName}
+                  onChangeText={setLastName}
+                />
+              </View>
+            </View>
+            <Text style={styles.label}>Email Address</Text>
+            <TextInput
+              style={styles.inputFull}
+              placeholder="Email Address"
               placeholderTextColor="#555"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            show={showPassword.confirm}
-            toggleShow={() =>
-              setShowPassword({
-                ...showPassword,
-                confirm: !showPassword.confirm,
-              })
-            }
-          />
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              editable={false}
+            />
+            <Text style={styles.label}>Phone Number</Text>
 
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.saveButtonText}>Save</Text>
-          </TouchableOpacity>
+            <View style={styles.row}>
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                value="+91"
+                editable={false}
+              />
+              <TextInput
+                style={[styles.input, { flex: 3 }]}
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+                editable={false}
+              />
+            </View>
+            <Text style={styles.label}>State</Text>
+            <View style={styles.pickerWrapper}>
+              <Picker
+                selectedValue={selectedState}
+                onValueChange={(itemValue) => setSelectedState(itemValue)}
+              >
+                <Picker.Item label="--Select State--" value="" />
+                {states.map((st) => (
+                  <Picker.Item
+                    key={st.id}
+                    label={st?.state_name}
+                    value={st?.id}
+                  />
+                ))}
+              </Picker>
+            </View>
+            <Text style={styles.sectionHeader}>Change Password</Text>
 
-          <TouchableOpacity onPress={handleDeleteAccount}>
-            <Text style={styles.deleteText}>Delete Account</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </View>
-    </SafeAreaView>
+            <Text style={styles.label}>Old Password</Text>
+            <PasswordInput
+              placeholder="Old Password"
+              placeholderTextColor="#555"
+              value={oldPassword}
+              onChangeText={setOldPassword}
+              show={showPassword.old}
+              toggleShow={() =>
+                setShowPassword({ ...showPassword, old: !showPassword.old })
+              }
+            />
+
+            <Text style={styles.label}>New Password</Text>
+            <PasswordInput
+              placeholder="New Password"
+              placeholderTextColor="#555"
+              value={newPassword}
+              onChangeText={setNewPassword}
+              show={showPassword.new}
+              toggleShow={() =>
+                setShowPassword({ ...showPassword, new: !showPassword.new })
+              }
+            />
+            <Text style={styles.label}>Confirm New Password</Text>
+            <PasswordInput
+              placeholder="Confirm New Password"
+              placeholderTextColor="#555"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              show={showPassword.confirm}
+              toggleShow={() =>
+                setShowPassword({
+                  ...showPassword,
+                  confirm: !showPassword.confirm,
+                })
+              }
+            />
+
+            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+              <Text style={styles.saveButtonText}>Save</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={handleDeleteAccount}>
+              <Text style={styles.deleteText}>Delete Account</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </SafeAreaView>
+    </ProtectedRoute>
   );
 };
 
 const PasswordInput: React.FC<PasswordInputProps> = ({
   placeholder,
-   placeholderTextColor,
+  placeholderTextColor,
   value,
   onChangeText,
   show,
@@ -477,7 +483,7 @@ const PasswordInput: React.FC<PasswordInputProps> = ({
       secureTextEntry={!show}
       value={value}
       onChangeText={onChangeText}
-       placeholderTextColor={placeholderTextColor}
+      placeholderTextColor={placeholderTextColor}
     />
     <TouchableOpacity onPress={toggleShow}>
       <Ionicons name={show ? "eye-off" : "eye"} size={20} color="gray" />
@@ -566,7 +572,7 @@ const styles = StyleSheet.create({
     padding: 15,
     fontSize: 14,
     marginBottom: 15,
-    color:'#000'
+    color: "#000",
   },
   pickerWrapper: {
     flex: 1,
