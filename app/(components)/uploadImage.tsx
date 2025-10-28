@@ -5,7 +5,8 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import * as React from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Image,
   Modal,
@@ -59,6 +60,28 @@ const UploadDocumentScreen = () => {
     }
   };
 
+  // const loadData = async () => {
+  //   try {
+  //     const storedUser = await AsyncStorage.getItem("userData");
+  //     if (storedUser) {
+  //       const parsedUser = JSON.parse(storedUser);
+  //       const regId = parsedUser?.reg_id;
+  //       const freshUserData = await fetchUserData(regId);
+  //       setUserData(freshUserData || parsedUser);
+
+  //       const key = `uploadDone_${regId}_${
+  //         Array.isArray(adID) ? adID[0] : adID
+  //       }`;
+  //       const uploaded = await AsyncStorage.getItem(key);
+  //       if (uploaded === "true") {
+  //         setAlreadyUploaded(true);
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error("Error loading user data:", error);
+  //   }
+  // };
+
   const loadData = async () => {
     try {
       const storedUser = await AsyncStorage.getItem("userData");
@@ -71,9 +94,20 @@ const UploadDocumentScreen = () => {
         const key = `uploadDone_${regId}_${
           Array.isArray(adID) ? adID[0] : adID
         }`;
-        const uploaded = await AsyncStorage.getItem(key);
-        if (uploaded === "true") {
-          setAlreadyUploaded(true);
+        const stored = await AsyncStorage.getItem(key);
+        const today = new Date().toISOString().split("T")[0];
+
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed.done && parsed.date === today) {
+            // uploaded today → disable
+            setAlreadyUploaded(true);
+          } else {
+            // old upload → re-enable
+            setAlreadyUploaded(false);
+          }
+        } else {
+          setAlreadyUploaded(false);
         }
       }
     } catch (error) {
@@ -115,8 +149,6 @@ const UploadDocumentScreen = () => {
         name: filename || "upload.jpg",
         type: "image/jpeg",
       } as any);
-
-      console.log("formData", formData);
 
       const response = await fetch(
         "https://sarvsetu.trinitycrm.in/admin/Api/package_api.php",

@@ -438,11 +438,11 @@ export default function PaymentInformation() {
                   <Feather name="x" size={24} color="#000" />
                 </TouchableOpacity>
               </View>
-              <Text style={styles.inputLabel}>UPI ID</Text>
+              <Text style={styles.inputLabel}>UTR NO</Text>
               <TextInput
                 value={transactionId}
                 onChangeText={setTransactionId}
-                placeholder="Enter UPI ID"
+                placeholder="Enter UTR NO"
                 placeholderTextColor="#555"
                 style={styles.textInput}
               />

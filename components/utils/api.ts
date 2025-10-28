@@ -60,7 +60,7 @@ export const getPackageIngfo = async (regId: string) => {
       return [];
     }
   } catch (error) {
-    console.error("Error fetching dashboard data:", error);
+    console.error("Error fetching package data:", error);
     return [];
   }
 };
@@ -80,7 +80,7 @@ export const getPackageIngfoForUser = async (regId: string) => {
       return [];
     }
   } catch (error) {
-    console.error("Error fetching dashboard data:", error);
+    console.error("Error fetching pacakge user data:", error);
     return [];
   }
 };
@@ -103,7 +103,7 @@ export const fetchCMSData = async (column: string) => {
       return { success: false, error: "Failed to fetch data" };
     }
   } catch (error) {
-    console.error("Error fetching dashboard data:", error);
+    console.error("Error fetching fetchCMSData data:", error);
     return { success: false, error: "An error occurred while fetching data" };
   }
 };
@@ -154,7 +154,7 @@ export const fetchAllWalletData = async (regId: number) => {
     );
 
     if (response.data.status === "success") {
-      console.log("Wallet Data:", response.data);
+      // console.log("Wallet Data:", response.data);
       return response.data;
     } else {
       console.log("Error:", response.data.message);

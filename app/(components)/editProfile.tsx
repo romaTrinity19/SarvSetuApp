@@ -3,7 +3,6 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Picker } from "@react-native-picker/picker";
 import axios from "axios";
-import * as FileSystem from "expo-file-system";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
@@ -12,6 +11,8 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -52,8 +53,10 @@ const EditProfileScreen = () => {
     new: false,
     confirm: false,
   });
-  const [userData, setUserData] = useState<any>(null);
+
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
   const [states, setStates] = useState<State[]>([]);
   const [selectedImage, setSelectedImage] =
     useState<ImagePicker.ImagePickerAsset | null>(null);
@@ -145,33 +148,28 @@ const EditProfileScreen = () => {
     formData.append("type", "profileupdate");
 
     if (selectedImage) {
-      const fileInfo = await FileSystem.getInfoAsync(selectedImage.uri);
-      if (!fileInfo.exists) {
-        Toast.show({
-          type: "error",
-          text1: "File Error",
-          text2: "Selected image file does not exist.",
-          position: "top",
-        });
+      const fileUri = selectedImage.uri;
+      const fileName =
+        selectedImage.fileName || fileUri.split("/").pop() || "photo.jpg";
 
-        return;
-      }
-
-      formData.append("image", {
-        uri: selectedImage.uri,
-        name: selectedImage.fileName || "profile.jpg",
+      const file: any = {
+        uri: fileUri,
         type: selectedImage.mimeType || "image/jpeg",
-      } as any);
+        name: fileName,
+      };
+
+      formData.append("image", file);
     }
 
     try {
+      setSaving(true);
       const response = await fetch(
         "https://sarvsetu.trinitycrm.in/admin/Api/package_api.php",
         {
           method: "POST",
           headers: {
             Accept: "application/json",
-            // don't set Content-Type manually for FormData
+            "Content-Type": "multipart/form-data",
           },
           body: formData,
         }
@@ -199,6 +197,8 @@ const EditProfileScreen = () => {
         text1: "Unable to update profile.",
         position: "top",
       });
+    } finally {
+      setSaving(false); // 👈 stop loader
     }
   };
 
@@ -299,170 +299,187 @@ const EditProfileScreen = () => {
 
   return (
     <ProtectedRoute>
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: "#fff" }}
-        edges={["top"]}
-      >
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
         <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-        <View style={styles.container2}>
-          <View
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 5,
-              paddingLeft: 10,
-              paddingVertical: 15,
-            }}
-          >
-            <TouchableOpacity onPress={() => router.back()}>
-              <Feather name="arrow-left" size={24} color="#000" />
-            </TouchableOpacity>
-            <Text style={styles.header}>Edit Profile</Text>
-          </View>
-          <ScrollView
-            style={styles.container}
-            contentContainerStyle={{ paddingBottom: 40 }}
-          >
-            <View style={styles.avatarContainer}>
-              <TouchableOpacity style={styles.avatarCircle} onPress={pickImage}>
-                {selectedImage ? (
-                  <Image
-                    source={{ uri: selectedImage.uri }}
-                    style={styles.avatarImage}
-                  />
-                ) : (
-                  <>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0} // adjust as needed
+        >
+          <View style={styles.container2}>
+            <View
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 5,
+                paddingLeft: 10,
+                paddingVertical: 15,
+              }}
+            >
+              <TouchableOpacity onPress={() => router.back()}>
+                <Feather name="arrow-left" size={24} color="#000" />
+              </TouchableOpacity>
+              <Text style={styles.header}>Edit Profile</Text>
+            </View>
+            <ScrollView
+              style={styles.container}
+              contentContainerStyle={{ paddingBottom: 40 }}
+            >
+              <View style={styles.avatarContainer}>
+                <TouchableOpacity
+                  style={styles.avatarCircle}
+                  onPress={pickImage}
+                >
+                  {selectedImage ? (
                     <Image
-                      source={{
-                        uri: userData?.profile_image
-                          ? userData?.profile_image
-                          : "https://cdn-icons-png.flaticon.com/512/149/149071.png",
-                      }}
-                      style={styles.defaultAvatarImage}
+                      source={{ uri: selectedImage.uri }}
+                      style={styles.avatarImage}
                     />
+                  ) : (
+                    <>
+                      <Image
+                        source={{
+                          uri: userData?.profile_image
+                            ? userData?.profile_image
+                            : "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+                        }}
+                        style={styles.defaultAvatarImage}
+                      />
 
-                    <View style={styles.cameraIcon}>
-                      <Ionicons name="camera" size={16} color="#000" />
-                    </View>
-                  </>
+                      <View style={styles.cameraIcon}>
+                        <Ionicons name="camera" size={16} color="#000" />
+                      </View>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.row}>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.label}>First Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="First Name"
+                    placeholderTextColor="#555"
+                    value={firstName}
+                    onChangeText={setFirstName}
+                  />
+                </View>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.label}>Last Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Last Name"
+                    placeholderTextColor="#555"
+                    value={lastName}
+                    onChangeText={setLastName}
+                  />
+                </View>
+              </View>
+              <Text style={styles.label}>Email Address</Text>
+              <TextInput
+                style={styles.inputFull}
+                placeholder="Email Address"
+                placeholderTextColor="#555"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                editable={false}
+              />
+              <Text style={styles.label}>Phone Number</Text>
+
+              <View style={styles.row}>
+                <TextInput
+                  style={[styles.input, { flex: 1 }]}
+                  value="+91"
+                  editable={false}
+                />
+                <TextInput
+                  style={[styles.input, { flex: 3 }]}
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                  editable={false}
+                />
+              </View>
+              <Text style={styles.label}>State</Text>
+              <View style={styles.pickerWrapper}>
+                <Picker
+                  selectedValue={selectedState}
+                  onValueChange={(itemValue) => setSelectedState(itemValue)}
+                >
+                  <Picker.Item label="--Select State--" value="" />
+                  {states.map((st) => (
+                    <Picker.Item
+                      key={st.id}
+                      label={st?.state_name}
+                      value={st?.id}
+                    />
+                  ))}
+                </Picker>
+              </View>
+              <Text style={styles.sectionHeader}>Change Password</Text>
+
+              <Text style={styles.label}>Old Password</Text>
+              <PasswordInput
+                placeholder="Old Password"
+                placeholderTextColor="#555"
+                value={oldPassword}
+                onChangeText={setOldPassword}
+                show={showPassword.old}
+                toggleShow={() =>
+                  setShowPassword({ ...showPassword, old: !showPassword.old })
+                }
+              />
+
+              <Text style={styles.label}>New Password</Text>
+              <PasswordInput
+                placeholder="New Password"
+                placeholderTextColor="#555"
+                value={newPassword}
+                onChangeText={setNewPassword}
+                show={showPassword.new}
+                toggleShow={() =>
+                  setShowPassword({ ...showPassword, new: !showPassword.new })
+                }
+              />
+              <Text style={styles.label}>Confirm New Password</Text>
+              <PasswordInput
+                placeholder="Confirm New Password"
+                placeholderTextColor="#555"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                show={showPassword.confirm}
+                toggleShow={() =>
+                  setShowPassword({
+                    ...showPassword,
+                    confirm: !showPassword.confirm,
+                  })
+                }
+              />
+
+              <TouchableOpacity
+                style={[styles.saveButton, saving && { opacity: 0.7 }]}
+                disabled={saving}
+                onPress={handleSave}
+              >
+                {saving ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.saveButtonText}>Save</Text>
                 )}
               </TouchableOpacity>
-            </View>
 
-            <View style={styles.row}>
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>First Name</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="First Name"
-                  placeholderTextColor="#555"
-                  value={firstName}
-                  onChangeText={setFirstName}
-                />
-              </View>
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Last Name</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Last Name"
-                  placeholderTextColor="#555"
-                  value={lastName}
-                  onChangeText={setLastName}
-                />
-              </View>
-            </View>
-            <Text style={styles.label}>Email Address</Text>
-            <TextInput
-              style={styles.inputFull}
-              placeholder="Email Address"
-              placeholderTextColor="#555"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              editable={false}
-            />
-            <Text style={styles.label}>Phone Number</Text>
-
-            <View style={styles.row}>
-              <TextInput
-                style={[styles.input, { flex: 1 }]}
-                value="+91"
-                editable={false}
-              />
-              <TextInput
-                style={[styles.input, { flex: 3 }]}
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-                editable={false}
-              />
-            </View>
-            <Text style={styles.label}>State</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker
-                selectedValue={selectedState}
-                onValueChange={(itemValue) => setSelectedState(itemValue)}
+              <TouchableOpacity
+                onPress={handleDeleteAccount}
+                style={{ marginBottom: 20 }}
               >
-                <Picker.Item label="--Select State--" value="" />
-                {states.map((st) => (
-                  <Picker.Item
-                    key={st.id}
-                    label={st?.state_name}
-                    value={st?.id}
-                  />
-                ))}
-              </Picker>
-            </View>
-            <Text style={styles.sectionHeader}>Change Password</Text>
-
-            <Text style={styles.label}>Old Password</Text>
-            <PasswordInput
-              placeholder="Old Password"
-              placeholderTextColor="#555"
-              value={oldPassword}
-              onChangeText={setOldPassword}
-              show={showPassword.old}
-              toggleShow={() =>
-                setShowPassword({ ...showPassword, old: !showPassword.old })
-              }
-            />
-
-            <Text style={styles.label}>New Password</Text>
-            <PasswordInput
-              placeholder="New Password"
-              placeholderTextColor="#555"
-              value={newPassword}
-              onChangeText={setNewPassword}
-              show={showPassword.new}
-              toggleShow={() =>
-                setShowPassword({ ...showPassword, new: !showPassword.new })
-              }
-            />
-            <Text style={styles.label}>Confirm New Password</Text>
-            <PasswordInput
-              placeholder="Confirm New Password"
-              placeholderTextColor="#555"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              show={showPassword.confirm}
-              toggleShow={() =>
-                setShowPassword({
-                  ...showPassword,
-                  confirm: !showPassword.confirm,
-                })
-              }
-            />
-
-            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-              <Text style={styles.saveButtonText}>Save</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={handleDeleteAccount}>
-              <Text style={styles.deleteText}>Delete Account</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
+                <Text style={styles.deleteText}>Delete Account</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </ProtectedRoute>
   );

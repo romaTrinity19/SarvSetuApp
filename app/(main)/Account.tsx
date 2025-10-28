@@ -80,16 +80,17 @@ const AccountScreen = () => {
     }
   }, []);
 
-  if (userData?.reg_id) {
-    getPackageIngfoForUser(userData.reg_id)
-      .then((res) => {
-        setPackageInfoUser(res);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch package info", err);
-      });
-  }
-
+  useEffect(() => {
+    if (userData?.reg_id) {
+      getPackageIngfoForUser(userData.reg_id)
+        .then((res) => {
+          setPackageInfoUser(res);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch package info", err);
+        });
+    }
+  }, [userData?.reg_id]);
   const onRefresh = async () => {
     setRefreshing(true);
     await loadAndFetchUser();
@@ -108,7 +109,8 @@ const AccountScreen = () => {
       if (userData) {
         const { reg_id } = JSON.parse(userData);
         const walletData = await fetchAllWalletData(reg_id);
-        setWallet(walletData?.total);
+        const walletAmount = walletData?.total || 0;
+        setWallet(walletAmount > 45 ? walletAmount : 0);
       }
     } catch (err) {
       console.error(err);
@@ -119,7 +121,7 @@ const AccountScreen = () => {
     getWallet();
   }, []);
   const subtitle = `Total Wallet Amount - ₹${wallet}`;
-  // console.log("packageInfoUser", packageInfoUser);
+
   return (
     <ProtectedRoute>
       <SafeAreaView

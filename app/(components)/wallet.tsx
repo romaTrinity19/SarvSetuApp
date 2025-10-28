@@ -40,6 +40,8 @@ export default function WalletScreen() {
   const [wallet, setWallet] = useState<any>(null);
   const [statusData, setStatusData] = useState<any>(null);
   const [referral, setReferral] = useState<any>(null);
+  const [directReferral, setDirectReferral] = useState<any>(null);
+  const [adminAmt, setAdminAmt] = useState<any>(null);
   const [statusAmt, setStatusAmt] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<any>(null);
@@ -95,10 +97,16 @@ export default function WalletScreen() {
 
         const walletData = await fetchAllWalletData(reg_id);
         if (walletData) {
-          setWallet(walletData?.total);
+          const walletAmount = walletData?.total || 0;
+          const directAmt = walletData?.direct_referral || 0;
+          const finalWallet = walletAmount > 45 ? walletAmount : 0;
+          const finalDirect = finalWallet === 0 ? 0 : directAmt;
+          setWallet(finalWallet);
           setReferral(walletData?.referral);
           setStatusAmt(walletData?.status_amt);
           setStatusData(walletData?.withdraw_data);
+          setAdminAmt(walletData?.admin_amt);
+          setDirectReferral(finalDirect);
         }
       }
     } catch (err) {
@@ -111,6 +119,7 @@ export default function WalletScreen() {
     getWallet();
     loadAndFetchUser();
   }, []);
+  // console.log("wallet", wallet);
 
   if (userData?.reg_id) {
     getPackageIngfoForUser(userData.reg_id)
@@ -132,7 +141,16 @@ export default function WalletScreen() {
   };
 
   const handleWithdraw = async () => {
-    if (errorMsg) return; // agar error hai to API call hi mat karo
+    if (!upiId && (!accountNo || !ifscCode)) {
+      Toast.show({
+        type: "error",
+        text1: "Validation Error",
+        text2: "Please enter either UPI ID or Bank Account & IFSC Code.",
+        position: "top",
+      });
+      return;
+    }
+    if (errorMsg) return;
 
     setLoadingWithdraw(true);
     try {
@@ -217,15 +235,28 @@ export default function WalletScreen() {
           {/* Earnings */}
           <View style={styles.infoCard}>
             <View style={styles.row}>
-              <Text style={styles.label}>🎁 Referral Earning</Text>
+              <Text style={styles.label}>🎁 Direct Referral Earning</Text>
+              <Text style={styles.value}>
+                : {"  "}₹ {directReferral}
+              </Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>🎁 Indirect Referral Earning</Text>
               <Text style={styles.value}>
                 : {"  "}₹ {referral}
               </Text>
             </View>
+
             <View style={styles.row}>
               <Text style={styles.label}>📊 Status Earning</Text>
               <Text style={styles.value}>
                 : {"  "}₹ {statusAmt}
+              </Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>👤 Add By Admin</Text>
+              <Text style={styles.value}>
+                : {"  "}₹ {adminAmt}
               </Text>
             </View>
           </View>
@@ -248,7 +279,6 @@ export default function WalletScreen() {
               style={{
                 color: "#1B49F2",
                 fontWeight: "600",
-                marginLeft: 8,
                 fontSize: 14,
               }}
             >
@@ -261,16 +291,13 @@ export default function WalletScreen() {
             <TouchableOpacity
               style={[
                 styles.withdrawButton,
-                packageInfoUser?.[0]?.is_approved === "1" &&
-                isMonday &&
-                wallet >= 500
+                packageInfoUser?.[0]?.is_approved === "1" && wallet >= 500
                   ? {}
                   : { backgroundColor: "#ccc" },
               ]}
               onPress={() => {
                 if (
                   packageInfoUser?.[0]?.is_approved === "1" &&
-                  isMonday &&
                   wallet >= 500
                 ) {
                   setWithdrawModalVisible(true);
@@ -446,12 +473,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#333",
-    width: "50%",
+    width: "60%",
   },
   value: {
     fontSize: 14,
     color: "#444",
-    width: "50%",
+    width: "40%",
   },
   headerContainer: {
     backgroundColor: "#4B65E9",
@@ -532,7 +559,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "#00000099",
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -542,6 +569,8 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 20,
     position: "relative",
+    borderColor: "#002B5B",
+    borderWidth: 1.5,
   },
   modalTitle: {
     fontSize: 20,

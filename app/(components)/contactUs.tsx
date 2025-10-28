@@ -1,8 +1,12 @@
+import { fetchUserData } from "@/components/utils/api";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -22,6 +26,26 @@ const ContactUs = () => {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
+
+  useEffect(() => {
+    const loadAndFetchUser = async () => {
+      try {
+        const storedUser = await AsyncStorage.getItem("userData");
+        if (storedUser) {
+          const parsedUser = JSON.parse(storedUser);
+          const regId = parsedUser?.reg_id;
+          const freshUserData = await fetchUserData(regId);
+          setUserData(freshUserData || parsedUser);
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadAndFetchUser();
+  }, []);
 
   const handleSubmit = async () => {
     if (!fullName || !email || !phone || !subject || !message) {
@@ -51,6 +75,7 @@ const ContactUs = () => {
     formData.append("contact", phone);
     formData.append("subject", subject);
     formData.append("message", message);
+    formData.append("reg_id", userData?.reg_id || "");
     formData.append("type", "contact_us");
 
     try {
@@ -104,91 +129,97 @@ const ContactUs = () => {
         edges={["top"]}
       >
         <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-        <View style={styles.container}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color="black" />
-            <Text style={styles.backText}>Contact Us</Text>
-          </TouchableOpacity>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0} // adjust as needed
+        >
+          <View style={styles.container}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => router.back()}
+            >
+              <Ionicons name="arrow-back" size={24} color="black" />
+              <Text style={styles.backText}>Contact Us</Text>
+            </TouchableOpacity>
 
-          <ScrollView contentContainerStyle={styles.container1}>
-            <View style={styles.headerBox}>
-              <Text style={styles.headerTitle}>Contact Us</Text>
-              <Text style={styles.headerSubtitle}>
-                Get in touch with us for support, feedback, or inquiries—just a
-                tap away!
-              </Text>
-            </View>
-
-            <View style={{ padding: 18, backgroundColor: "#fff" }}>
-              <Text style={styles.label}>Full Name</Text>
-              <TextInput
-                style={styles.input}
-                value={fullName}
-                onChangeText={setFullName}
-                placeholder="Full Name"
-                placeholderTextColor="#555"
-              />
-
-              <Text style={styles.label}>Email Address</Text>
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                placeholder="Email Address"
-                placeholderTextColor="#555"
-                keyboardType="email-address"
-              />
-
-              <Text style={styles.label}>Phone Number</Text>
-              <View style={styles.phoneInputBox}>
-                <Text style={styles.flag}>🇮🇳</Text>
-                <Text style={styles.code}>+91</Text>
-                <TextInput
-                  style={styles.phoneInput}
-                  value={phone}
-                  onChangeText={setPhone}
-                  placeholder="Phone Number"
-                  placeholderTextColor="#555"
-                  keyboardType="phone-pad"
-                />
+            <ScrollView contentContainerStyle={styles.container1}>
+              <View style={styles.headerBox}>
+                <Text style={styles.headerTitle}>Contact Us</Text>
+                <Text style={styles.headerSubtitle}>
+                  Get in touch with us for support, feedback, or inquiries—just
+                  a tap away!
+                </Text>
               </View>
 
-              <Text style={styles.label}>Subject</Text>
-              <TextInput
-                style={styles.input}
-                value={subject}
-                onChangeText={setSubject}
-                placeholder="Subject"
-                placeholderTextColor="#555"
-              />
+              <View style={{ padding: 18, backgroundColor: "#fff" }}>
+                <Text style={styles.label}>Full Name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={fullName}
+                  onChangeText={setFullName}
+                  placeholder="Full Name"
+                  placeholderTextColor="#555"
+                />
 
-              <Text style={styles.label}>Message</Text>
-              <TextInput
-                style={[styles.input, { height: 100 }]}
-                value={message}
-                onChangeText={setMessage}
-                placeholder="Message"
-                placeholderTextColor="#555"
-                multiline
-              />
+                <Text style={styles.label}>Email Address</Text>
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="Email Address"
+                  placeholderTextColor="#555"
+                  keyboardType="email-address"
+                />
 
-              <TouchableOpacity
-                style={[styles.submitButton, loading && { opacity: 0.7 }]}
-                onPress={handleSubmit}
-                disabled={loading} // disable while loading
-              >
-                {loading ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.submitText}>Submit</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </View>
+                <Text style={styles.label}>Phone Number</Text>
+                <View style={styles.phoneInputBox}>
+                  <Text style={styles.flag}>🇮🇳</Text>
+                  <Text style={styles.code}>+91</Text>
+                  <TextInput
+                    style={styles.phoneInput}
+                    value={phone}
+                    onChangeText={setPhone}
+                    placeholder="Phone Number"
+                    placeholderTextColor="#555"
+                    keyboardType="phone-pad"
+                  />
+                </View>
+
+                <Text style={styles.label}>Subject</Text>
+                <TextInput
+                  style={styles.input}
+                  value={subject}
+                  onChangeText={setSubject}
+                  placeholder="Subject"
+                  placeholderTextColor="#555"
+                />
+
+                <Text style={styles.label}>Message</Text>
+                <TextInput
+                  style={[styles.input, { height: 100 }]}
+                  value={message}
+                  onChangeText={setMessage}
+                  placeholder="Message"
+                  placeholderTextColor="#555"
+                  multiline
+                />
+
+                <TouchableOpacity
+                  style={[styles.submitButton, loading && { opacity: 0.7 }]}
+                  onPress={handleSubmit}
+                  disabled={loading} // disable while loading
+                >
+                  {loading ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.submitText}>Submit</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </ProtectedRoute>
   );

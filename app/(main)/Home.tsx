@@ -15,6 +15,7 @@ import {
   Dimensions,
   FlatList,
   Image,
+  Linking,
   Modal,
   StatusBar,
   StyleSheet,
@@ -33,9 +34,16 @@ type AdCardProps = {
   subscription: boolean;
   userData: any;
   id: any;
+  item: any;
 };
 
-const AdCard: React.FC<AdCardProps> = ({ imageSrc, payout, userData, id }) => {
+const AdCard: React.FC<AdCardProps> = ({
+  imageSrc,
+  payout,
+  userData,
+  id,
+  item,
+}) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [fullscreenVisible, setFullscreenVisible] = useState(false);
   const [packageInfo, setPackageInfo] = useState<any[]>([]);
@@ -48,6 +56,14 @@ const AdCard: React.FC<AdCardProps> = ({ imageSrc, payout, userData, id }) => {
       .then((res) => setPackageInfo(res))
       .catch((err) => console.error("Failed to fetch package info", err));
   }
+
+  // useEffect(() => {
+  //   if (userData?.reg_id) {
+  //     getPackageIngfoForUser(userData.reg_id)
+  //       .then((res) => setPackageInfo(res))
+  //       .catch((err) => console.error("Failed to fetch package info", err));
+  //   }
+  // }, [userData?.reg_id]);
 
   const isSubscribed = packageInfo[0]?.is_approved == 1;
 
@@ -138,17 +154,30 @@ const AdCard: React.FC<AdCardProps> = ({ imageSrc, payout, userData, id }) => {
           <Text style={styles.buttonText}>Upload</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.statusButton, { backgroundColor: "#1e90ff" }]}
-        >
-          <Ionicons
-            name="globe-outline"
-            size={20}
-            color="white"
-            style={styles.icon}
-          />
-          <Text style={styles.buttonText}>Visit Now</Text>
-        </TouchableOpacity>
+        {(item.visit_url || item.enquiry_link || item.contact) && (
+          <TouchableOpacity
+            style={[styles.statusButton, { backgroundColor: "#1e90ff" }]}
+            onPress={() => {
+              if (item.contact) {
+                Linking.openURL(`tel:${item.contact}`);
+              } else if (item.visit_url) {
+                Linking.openURL(item.visit_url);
+              } else if (item.enquiry_link) {
+                Linking.openURL(item.enquiry_link);
+              }
+            }}
+          >
+            <Ionicons
+              name={item.contact ? "call-outline" : "globe-outline"} // Call icon if contact
+              size={20}
+              color="white"
+              style={styles.icon}
+            />
+            <Text style={styles.buttonText}>
+              {item.contact ? "Call" : "Visit Now"}
+            </Text>
+          </TouchableOpacity>
+        )}
 
         {/* {showCall && (
     <TouchableOpacity style={[styles.statusButton, { backgroundColor: "#1e90ff",}]}>
@@ -456,11 +485,7 @@ const App = () => {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([
-      fetchDashboardData(),
-      loadData(),
-      loadBanners(), // ✅ Refresh banners too
-    ]);
+    await Promise.all([fetchDashboardData(), loadData(), loadBanners()]);
     setRefreshing(false);
   };
 
@@ -516,6 +541,7 @@ const App = () => {
                   subscription={item?.is_subscribe}
                   userData={userData}
                   id={item.ads_id}
+                  item={item}
                 />
               )}
               contentContainerStyle={{ paddingBottom: 80 }}
@@ -612,27 +638,25 @@ const styles = StyleSheet.create({
   },
   buttonGroup: {
     flexDirection: "row",
-    flexWrap: "wrap",
     justifyContent: "space-between",
-    margin: 10,
+    alignItems: "center",
+    marginVertical: 10,
   },
   statusButton: {
-    backgroundColor: "#34A853",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 8,
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    marginRight: 8,
-    marginBottom: 8,
+    justifyContent: "center",
+    paddingVertical: 10,
+    marginHorizontal: 5,
+    borderRadius: 5,
   },
   buttonText: {
-    color: "#fff",
-    fontWeight: "600",
-    marginLeft: 6,
+    color: "white",
+    fontWeight: "bold",
   },
   icon: {
-    marginRight: 2,
+    marginRight: 5,
   },
 
   modalOverlay: {

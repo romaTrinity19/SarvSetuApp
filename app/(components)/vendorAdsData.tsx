@@ -5,11 +5,9 @@ import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   FlatList,
   Image,
-  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -200,7 +198,7 @@ const App = () => {
         console.warn("Invalid data format");
       }
     } catch (error) {
-      console.error("Error fetching dashboard data:", error);
+      console.error("Error fetching dashboarddd data:", error);
     } finally {
       setLoading(false);
     }
@@ -211,7 +209,6 @@ const App = () => {
       fetchDashboardData(userData.reg_id);
     }
   };
-  
 
   if (loading || !userData) {
     return (
@@ -282,22 +279,21 @@ const App = () => {
           ))}
         </ScrollView> */}
         <FlatList
-  data={ads}
-  keyExtractor={(item) => item.ads_id.toString()}
-  contentContainerStyle={{ paddingTop: 8, paddingBottom: 20 }}
-  renderItem={({ item }) => (
-    <AdCard
-      imageSrc={item.upload_img}
-      payout={item.payamt}
-      isApprove={item?.status}
-      id={item.ads_id}
-      onDeleteSuccess={refreshDashboard}
-    />
-  )}
-  onRefresh={refreshDashboard}
-  refreshing={loading}
-/>
-
+          data={ads}
+          keyExtractor={(item) => item.ads_id.toString()}
+          contentContainerStyle={{ paddingTop: 8, paddingBottom: 20 }}
+          renderItem={({ item }) => (
+            <AdCard
+              imageSrc={item.upload_img}
+              payout={item.payamt}
+              isApprove={item?.status}
+              id={item.ads_id}
+              onDeleteSuccess={refreshDashboard}
+            />
+          )}
+          onRefresh={refreshDashboard}
+          refreshing={loading}
+        />
       </View>
     </SafeAreaView>
   );

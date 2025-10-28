@@ -64,7 +64,6 @@ const LifetimeMembershipScreen = () => {
       const data = response.data;
       if (data.status === "success" && data.message) {
         setPackage(data?.message?.package_data);
-        console.log("packages packages", packages);
       } else {
         Toast.show({
           type: "error",

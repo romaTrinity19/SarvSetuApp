@@ -101,7 +101,6 @@ const SignUpScreen = () => {
     setLoading(true);
     if (
       !firstName ||
-      !lastName ||
       !email ||
       !phone ||
       !selectedState ||
@@ -124,6 +123,7 @@ const SignUpScreen = () => {
         text2: "Passwords do not match.",
         position: "top",
       });
+      setLoading(false);
       return;
     }
 
@@ -310,6 +310,7 @@ const SignUpScreen = () => {
                     key={st.id}
                     label={st?.state_name}
                     value={st?.id}
+                    color="black"
                   />
                 ))}
               </Picker>
