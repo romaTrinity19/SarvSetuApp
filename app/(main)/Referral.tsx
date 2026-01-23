@@ -1,6 +1,7 @@
 import { fetchUserData } from "@/components/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   Clipboard,
@@ -117,9 +118,14 @@ const ReferAndEarn = () => {
                 <Text style={styles.buttonText}>Refer Now</Text>
               </TouchableOpacity>
 
-              {/* <TouchableOpacity style={styles.buttonOutline}>
-                <Text style={styles.buttonOutlineText}>View Referrals</Text>
-              </TouchableOpacity> */}
+              <TouchableOpacity
+                style={styles.buttonOutline}
+                onPress={() => {
+                  router.replace("/(components)/ReferralTeam");
+                }}
+              >
+                <Text style={styles.buttonOutlineText}>View Referral Team</Text>
+              </TouchableOpacity>
             </View>
           </ScrollView>
         </View>

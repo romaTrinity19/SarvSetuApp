@@ -43,7 +43,7 @@ export default function PaymentInformation() {
   const [modalVisible, setModalVisible] = useState(false);
   const [transactionId, setTransactionId] = useState("");
   const [selectedImage, setSelectedImage] = useState<ImagePickerAsset | null>(
-    null
+    null,
   );
   const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
 
@@ -126,7 +126,7 @@ export default function PaymentInformation() {
             Accept: "application/json",
           },
           body: formData,
-        }
+        },
       );
 
       const textResult = await response.text();
@@ -170,7 +170,7 @@ export default function PaymentInformation() {
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
+      allowsEditing: false,
       quality: 1, // Keep high quality from picker; compression is handled separately
     });
 
@@ -184,7 +184,7 @@ export default function PaymentInformation() {
         {
           compress: 0.7, // Compression factor (0 to 1)
           format: ImageManipulator.SaveFormat.JPEG,
-        }
+        },
       );
 
       setSelectedImage({ ...original, uri: compressed.uri }); // Use compressed URI
@@ -210,7 +210,7 @@ export default function PaymentInformation() {
     const fetchPaymentDetails = async () => {
       try {
         const response = await fetch(
-          "https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=getpayment_details"
+          "https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=getpayment_details",
         );
         const data = await response.json();
 

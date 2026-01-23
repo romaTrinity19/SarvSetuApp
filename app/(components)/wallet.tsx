@@ -1,6 +1,7 @@
 import {
   fetchAllWalletData,
   fetchUserData,
+  getCommissionSetting,
   getPackageIngfoForUser,
 } from "@/components/utils/api";
 import { Feather, Ionicons } from "@expo/vector-icons";
@@ -8,6 +9,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
+
 import {
   Dimensions,
   Modal,
@@ -50,31 +52,27 @@ export default function WalletScreen() {
   const [loadingWithdraw, setLoadingWithdraw] = useState(false);
   const [packageInfoUser, setPackageInfoUser] = useState<PackageInfo[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+  const [commission, setCommission] = useState<any>(null);
+  const [serviceCharge, setServiceCharge] = useState(0);
+  const [adminCharge, setAdminCharge] = useState(0);
+  const [netAmount, setNetAmount] = useState(0);
+  const [comAmt, setComAmt] = useState(0);
   const today = new Date();
   const isMonday = today.getDay() === 1;
 
-  const handleAmountChange = (text: any) => {
-    setWithdrawAmount(text);
-
-    const amount = parseFloat(text);
-
-    if (!amount || isNaN(amount)) {
-      setErrorMsg("Please enter a valid amount.");
-      return;
+  const fetchCommission = async () => {
+    try {
+      const data = await getCommissionSetting();
+      setCommission(data);
+      setComAmt(data?.minimum_withdraw || 500);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoading(false);
     }
-
-    if (amount < 500) {
-      setErrorMsg("Minimum withdrawal amount is ₹500.");
-      return;
-    }
-
-    if (amount > wallet) {
-      setErrorMsg(`Insufficient balance. You have only ₹${wallet}`);
-      return;
-    }
-
-    setErrorMsg("");
   };
+
   const loadAndFetchUser = async () => {
     try {
       const storedUser = await AsyncStorage.getItem("userData");
@@ -106,6 +104,7 @@ export default function WalletScreen() {
           setStatusAmt(walletData?.status_amt);
           setStatusData(walletData?.withdraw_data);
           setAdminAmt(walletData?.admin_amt);
+          console.log(walletData?.admin_amt);
           setDirectReferral(finalDirect);
         }
       }
@@ -118,8 +117,52 @@ export default function WalletScreen() {
   useEffect(() => {
     getWallet();
     loadAndFetchUser();
+    fetchCommission();
   }, []);
-  // console.log("wallet", wallet);
+
+  const handleAmountChange = (text: any) => {
+    setWithdrawAmount(text);
+
+    const amount = parseFloat(text);
+
+    const minWithdraw = commission?.minimum_withdraw || 500;
+
+    const servicePer = commission?.service_per || 0;
+    const adminPer = commission?.admin_per || 0;
+
+    if (!amount || isNaN(amount)) {
+      setErrorMsg("Please enter a valid amount.");
+      return;
+    }
+
+    if (amount < minWithdraw) {
+      setErrorMsg(`Minimum withdrawal amount is ₹${minWithdraw}.`);
+      return;
+    }
+
+    if (amount > wallet) {
+      setErrorMsg(`Insufficient balance. You have only ₹${wallet}`);
+      return;
+    }
+
+    const serviceAmt = (amount * servicePer) / 100;
+    const adminAmt = (amount * adminPer) / 100;
+    const netAmt = amount - (serviceAmt + adminAmt);
+
+    // ✅ Save in state
+    setServiceCharge(serviceAmt);
+    setAdminCharge(adminAmt);
+    setNetAmount(netAmt);
+
+    setErrorMsg("");
+    setSuccessMsg(
+      `Service Charge: ₹${serviceAmt.toFixed(
+        2
+      )} | Admin Charge: ₹${adminAmt.toFixed(
+        2
+      )} | You will receive: ₹${netAmt.toFixed(2)}`
+    );
+  };
 
   if (userData?.reg_id) {
     getPackageIngfoForUser(userData.reg_id)
@@ -283,7 +326,7 @@ export default function WalletScreen() {
               }}
             >
               Withdraw Request allowed only on Monday And Minimum Withdraw
-              Request ₹ 500
+              Request ₹ {comAmt}
             </Text>
           </View>
           {/* Buttons */}
@@ -406,6 +449,11 @@ export default function WalletScreen() {
                 {errorMsg ? (
                   <Text style={{ color: "red", marginBottom: 10 }}>
                     {errorMsg}
+                  </Text>
+                ) : null}
+                {!errorMsg && successMsg ? (
+                  <Text style={{ color: "green", marginBottom: 10 }}>
+                    {successMsg}
                   </Text>
                 ) : null}
                 <TextInput

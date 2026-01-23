@@ -1,4 +1,3 @@
-import { fetchUserData } from "@/components/utils/api";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -52,11 +51,48 @@ const UploadDocumentScreen = () => {
       const compressed = await ImageManipulator.manipulateAsync(
         selectedImage.uri,
         [{ resize: { width: 800 } }],
-        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG },
       );
 
       setImage(compressed.uri);
       // setDocument(type as string, compressed.uri); // Uncomment if needed
+    }
+  };
+
+  const loadData = async () => {
+    try {
+      const storedUser = await AsyncStorage.getItem("userData");
+      if (!storedUser) return;
+
+      const parsedUser = JSON.parse(storedUser);
+      const regId = parsedUser?.reg_id;
+      setUserData(parsedUser);
+
+      const adIdValue = Array.isArray(adID) ? adID[0] : adID;
+      const key = `uploadDone_${regId}_${adIdValue}`;
+
+      const stored = await AsyncStorage.getItem(key);
+
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const uploadedAt = parsed.uploadedAt;
+
+        const now = Date.now();
+        const diffHours = (now - uploadedAt) / (1000 * 60 * 60);
+
+        if (diffHours < 24) {
+          // ⛔ still locked
+          setAlreadyUploaded(true);
+        } else {
+          // ✅ 24 hours completed
+          setAlreadyUploaded(false);
+          await AsyncStorage.removeItem(key);
+        }
+      } else {
+        setAlreadyUploaded(false);
+      }
+    } catch (err) {
+      console.error("Upload check error:", err);
     }
   };
 
@@ -72,48 +108,26 @@ const UploadDocumentScreen = () => {
   //       const key = `uploadDone_${regId}_${
   //         Array.isArray(adID) ? adID[0] : adID
   //       }`;
-  //       const uploaded = await AsyncStorage.getItem(key);
-  //       if (uploaded === "true") {
-  //         setAlreadyUploaded(true);
+  //       const stored = await AsyncStorage.getItem(key);
+  //       const today = new Date().toISOString().split("T")[0];
+
+  //       if (stored) {
+  //         const parsed = JSON.parse(stored);
+  //         if (parsed.done && parsed.date === today) {
+  //           // uploaded today → disable
+  //           setAlreadyUploaded(true);
+  //         } else {
+  //           // old upload → re-enable
+  //           setAlreadyUploaded(false);
+  //         }
+  //       } else {
+  //         setAlreadyUploaded(false);
   //       }
   //     }
   //   } catch (error) {
   //     console.error("Error loading user data:", error);
   //   }
   // };
-
-  const loadData = async () => {
-    try {
-      const storedUser = await AsyncStorage.getItem("userData");
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        const regId = parsedUser?.reg_id;
-        const freshUserData = await fetchUserData(regId);
-        setUserData(freshUserData || parsedUser);
-
-        const key = `uploadDone_${regId}_${
-          Array.isArray(adID) ? adID[0] : adID
-        }`;
-        const stored = await AsyncStorage.getItem(key);
-        const today = new Date().toISOString().split("T")[0];
-
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed.done && parsed.date === today) {
-            // uploaded today → disable
-            setAlreadyUploaded(true);
-          } else {
-            // old upload → re-enable
-            setAlreadyUploaded(false);
-          }
-        } else {
-          setAlreadyUploaded(false);
-        }
-      }
-    } catch (error) {
-      console.error("Error loading user data:", error);
-    }
-  };
 
   useEffect(() => {
     loadData();
@@ -122,8 +136,9 @@ const UploadDocumentScreen = () => {
   useFocusEffect(
     useCallback(() => {
       loadData();
-    }, [])
+    }, []),
   );
+
   const handleSubmit = async () => {
     if (submitting) return;
 
@@ -158,7 +173,7 @@ const UploadDocumentScreen = () => {
             Accept: "application/json",
           },
           body: formData,
-        }
+        },
       );
 
       const responseText = await response.text();
@@ -172,10 +187,20 @@ const UploadDocumentScreen = () => {
       }
 
       if (response.ok && result.status === "success") {
+        // const key = `uploadDone_${userData.reg_id}_${
+        //   Array.isArray(adID) ? adID[0] : adID
+        // }`;
+        //  await AsyncStorage.setItem(key, "true");
         const key = `uploadDone_${userData.reg_id}_${
           Array.isArray(adID) ? adID[0] : adID
         }`;
-        await AsyncStorage.setItem(key, "true");
+
+        await AsyncStorage.setItem(
+          key,
+          JSON.stringify({
+            uploadedAt: Date.now(),
+          }),
+        );
         Toast.show({
           type: "success",
           text1: "Upload Successful",
@@ -269,8 +294,8 @@ const UploadDocumentScreen = () => {
                 {alreadyUploaded
                   ? "Already Uploaded"
                   : submitting
-                  ? "Uploading..."
-                  : "Upload Document"}
+                    ? "Uploading..."
+                    : "Upload Document"}
               </Text>
             </TouchableOpacity>
           </View>

@@ -3,7 +3,7 @@ import axios from "axios";
 export const fetchUserData = async (reg_id: string) => {
   try {
     const response = await fetch(
-      `https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?reg_id=${reg_id}&type=getuser`
+      `https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?reg_id=${reg_id}&type=getuser`,
     );
 
     if (!response.ok) {
@@ -34,7 +34,7 @@ export const fetchBannerImages = async (): Promise<string[]> => {
 
     // Extract images from the nested response
     const images = response.data?.message?.get_banner?.map(
-      (item: { banner_img: string }) => item.banner_img
+      (item: { banner_img: string }) => item.banner_img,
     );
 
     return images || [];
@@ -48,7 +48,7 @@ export const fetchBannerImages = async (): Promise<string[]> => {
 export const getPackageIngfo = async (regId: string) => {
   try {
     const response = await fetch(
-      `https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=getpackageinfo&reg_id=${regId}`
+      `https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=getpackageinfo&reg_id=${regId}`,
     );
 
     const json = await response.json();
@@ -68,7 +68,7 @@ export const getPackageIngfo = async (regId: string) => {
 export const getPackageIngfoForUser = async (regId: string) => {
   try {
     const response = await fetch(
-      `https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=getpackageinfo_user&reg_id=${regId}`
+      `https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=getpackageinfo_user&reg_id=${regId}`,
     );
 
     const json = await response.json();
@@ -89,7 +89,7 @@ export const getPackageIngfoForUser = async (regId: string) => {
 export const fetchCMSData = async (column: string) => {
   try {
     const response = await fetch(
-      `https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=get_newdata&column=${column}`
+      `https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=get_newdata&column=${column}`,
     );
 
     const text = await response.text();
@@ -111,7 +111,7 @@ export const fetchCMSData = async (column: string) => {
 export const fetchShopServices = async () => {
   try {
     const response = await axios.get(
-      "https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=shopservice"
+      "https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=shopservice",
     );
     return response.data;
   } catch (error) {
@@ -129,7 +129,7 @@ export const fetchShopServiceDetail = async (service_id: string) => {
           type: "shopservicedetail",
           service_id,
         },
-      }
+      },
     );
     return response.data;
   } catch (error) {
@@ -150,7 +150,7 @@ export const fetchAllWalletData = async (regId: number) => {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     if (response.data.status === "success") {
@@ -163,5 +163,45 @@ export const fetchAllWalletData = async (regId: number) => {
   } catch (error) {
     console.error("API Error:", error);
     return null;
+  }
+};
+
+export const getCommissionSetting = async () => {
+  try {
+    const response = await axios.get(
+      "https://sarvsetu.trinitycrm.in/admin/Api/registration_api.php",
+      {
+        params: {
+          type: "get_commission_setting",
+        },
+      },
+    );
+
+    if (response.data.status === "success") {
+      return response.data.data;
+    } else {
+      throw new Error(response.data.message);
+    }
+  } catch (error) {
+    console.error("Commission API Error:", error);
+    throw error;
+  }
+};
+
+export const getReferralTeam = async (regId: any) => {
+  try {
+    const response = await axios.get(
+      "https://sarvsetu.trinitycrm.in/admin/Api/registration_api.php",
+      {
+        params: {
+          type: "referral_team",
+          reg_id: regId,
+        },
+      },
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Referral Team API Error:", error);
+    throw error;
   }
 };

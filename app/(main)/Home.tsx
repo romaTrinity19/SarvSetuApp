@@ -24,6 +24,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
+import ImageSlider from "../(components)/ImageSlider";
 import ProtectedRoute from "../(components)/ProtectedRoute";
 
 const { width } = Dimensions.get("window");
@@ -88,12 +90,46 @@ const AdCard: React.FC<AdCardProps> = ({
     }
   };
 
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     if (uploaded === "true") {
+  //       setUploadDisabled(true);
+  //     }
+  //   }, [uploaded]),
+  // );
+
+  const checkUploadLock = async (adID: string, regId: string) => {
+    const key = `uploadDone_${regId}_${adID}`;
+    const stored = await AsyncStorage.getItem(key);
+
+    if (!stored) return false;
+
+    const { uploadedAt } = JSON.parse(stored);
+    const diffHours = (Date.now() - uploadedAt) / (1000 * 60 * 60);
+
+    if (diffHours < 24) {
+      return true; // 🔒 disable
+    } else {
+      await AsyncStorage.removeItem(key);
+      return false; // 🔓 enable
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
-      if (uploaded === "true") {
-        setUploadDisabled(true);
-      }
-    }, [uploaded])
+      const run = async () => {
+        if (!userData?.reg_id || !id) return;
+
+        const locked = await checkUploadLock(
+          id.toString(),
+          userData.reg_id.toString(),
+        );
+
+        setUploadDisabled(locked);
+      };
+
+      run();
+    }, [id, userData]),
   );
 
   return (
@@ -139,16 +175,25 @@ const AdCard: React.FC<AdCardProps> = ({
             uploadDisabled && { backgroundColor: "gray" },
           ]}
           onPress={() => {
-            if (isSubscribed && !uploadDisabled) {
+            if (uploadDisabled) {
+              Toast.show({
+                type: "info",
+                text1: "Upload Locked",
+                text2: "You can upload again after 24 hours",
+              });
+              return;
+            }
+            if (!isSubscribed) {
+              setModalVisible(true);
+              return;
+            } else {
               router.push({
                 pathname: "/(components)/uploadImage",
                 params: { adID: id },
               });
-            } else {
-              setModalVisible(true);
             }
           }}
-          disabled={uploadDisabled}
+          // disabled={uploadDisabled}
         >
           <Feather name="upload" size={20} color="white" style={styles.icon} />
           <Text style={styles.buttonText}>Upload</Text>
@@ -458,7 +503,7 @@ const App = () => {
   useFocusEffect(
     useCallback(() => {
       loadData();
-    }, [])
+    }, []),
   );
   useEffect(() => {
     fetchDashboardData();
@@ -467,7 +512,7 @@ const App = () => {
   const fetchDashboardData = async () => {
     try {
       const response = await fetch(
-        "https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=dashboard"
+        "https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php?type=dashboard",
       );
       const json = await response.json();
 
@@ -515,6 +560,9 @@ const App = () => {
             <FlatList
               data={ads}
               keyExtractor={(item) => item.ads_id.toString()}
+              ListHeaderComponent={() => (
+                <ImageSlider images={banners} height={200} />
+              )}
               // ListHeaderComponent={() => (
               //   <Carousel
               //     width={width}

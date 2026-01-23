@@ -63,7 +63,7 @@ const SignUpScreen = () => {
             Accept: "application/json",
           },
           body: JSON.stringify({ reg_code: code }),
-        }
+        },
       );
       const data = await response.json();
       if (data.status === "success") {
@@ -81,7 +81,7 @@ const SignUpScreen = () => {
     const fetchStates = async () => {
       try {
         const response = await axios.get(
-          "https://sarvsetu.trinitycrm.in/admin/Api/registration_api.php?type=state"
+          "https://sarvsetu.trinitycrm.in/admin/Api/registration_api.php?type=state",
         );
 
         if (response.data && Array.isArray(response.data.data)) {
@@ -145,7 +145,7 @@ const SignUpScreen = () => {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       const data = response.data;
@@ -401,6 +401,7 @@ const SignUpScreen = () => {
             <TouchableOpacity
               style={styles.signUpButton}
               onPress={handleSignUp}
+              disabled={loading}
             >
               {loading ? (
                 <ActivityIndicator size="large" color="#fff" />
@@ -467,6 +468,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     textDecorationLine: "underline",
     paddingLeft: 5,
+    fontSize: 20,
   },
   form: {
     padding: 20,

@@ -1,6 +1,5 @@
 import Feather from "@expo/vector-icons/Feather";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
 import { router } from "expo-router";
@@ -55,7 +54,7 @@ export default function LoginScreen() {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       const data = response.data;
@@ -74,22 +73,54 @@ export default function LoginScreen() {
       }
     } catch (error: any) {
       if (error.response) {
-        console.error("API Error - Response Data:", error.response.data);
-        console.error("API Error - Status Code:", error.response.status);
-        console.error("API Error - Headers:", error.response.headers);
+        const data = error.response.data;
+        if (data?.is_verified == 0) {
+          Toast.show({
+            type: "info",
+            text1: "Account not verified",
+            text2: "Please verify your account using OTP",
+            position: "top",
+          });
+
+          router.push({
+            pathname: "/(auth)/otp",
+            params: {
+              otp: data.otp,
+              regId: data.reg_id,
+              contact_no: data.contact_no,
+              email: email,
+            },
+          });
+
+          return;
+        }
+        Toast.show({
+          type: "error",
+          text1: data?.message || "Login failed",
+          position: "top",
+        });
+        // console.error("API Error - Response Data:", error.response.data);
+        // console.error("API Error - Status Code:", error.response.status);
+        // console.error("API Error - Headers:", error.response.headers);
       } else if (error.request) {
         console.error(" API Error - No response received:", error.request);
+        Toast.show({
+          type: "error",
+          text1: error.response?.data?.message || "No response received",
+          text2: "Login Failed",
+          position: "top",
+        });
       } else {
         console.error("API Error - Error Message:", error.message);
+        Toast.show({
+          type: "error",
+          text1:
+            error.response?.data?.message ||
+            "Something went wrong. Please try again.",
+          text2: "Login Failed",
+          position: "top",
+        });
       }
-      Toast.show({
-        type: "error",
-        text1:
-          error.response?.data?.message ||
-          "Something went wrong. Please try again.",
-        text2: "Login Failed",
-        position: "top",
-      });
     } finally {
       setLoading(false);
     }
@@ -129,7 +160,7 @@ export default function LoginScreen() {
             <TextInput
               style={styles.input}
               placeholder=""
-               placeholderTextColor="#555"
+              placeholderTextColor="#555"
               value={email}
               onChangeText={setEmail}
             />
@@ -139,7 +170,7 @@ export default function LoginScreen() {
               <TextInput
                 style={{ flex: 1 }}
                 placeholder=""
-                 placeholderTextColor="#555"
+                placeholderTextColor="#555"
                 secureTextEntry={secureText}
                 value={password}
                 onChangeText={setPassword}
@@ -174,7 +205,11 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.loginButton} onPress={handleSignIn}>
+            <TouchableOpacity
+              style={styles.loginButton}
+              onPress={handleSignIn}
+              disabled={loading}
+            >
               {loading ? (
                 <ActivityIndicator size="large" color="#fff" />
               ) : (
@@ -249,6 +284,7 @@ const styles = StyleSheet.create({
   link2: {
     color: "#fff",
     textDecorationLine: "underline",
+    fontSize: 20,
   },
   label: {
     fontSize: 14,
@@ -262,7 +298,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 15,
     marginBottom: 15,
-     color: "black"
+    color: "black",
   },
   passwordContainer: {
     flexDirection: "row",
