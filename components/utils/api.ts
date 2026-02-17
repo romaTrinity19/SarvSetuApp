@@ -154,7 +154,7 @@ export const fetchAllWalletData = async (regId: number) => {
     );
 
     if (response.data.status === "success") {
-      // console.log("Wallet Data:", response.data);
+      //console.log("Wallet Data:", response.data);
       return response.data;
     } else {
       console.log("Error:", response.data.message);
@@ -204,4 +204,13 @@ export const getReferralTeam = async (regId: any) => {
     console.error("Referral Team API Error:", error);
     throw error;
   }
+};
+export const getWithdrawDaySetting = async () => {
+  const res = await fetch(
+    "https://sarvsetu.trinitycrm.in/admin/Api/registration_api.php?type=get_withdraw_day_setting",
+    {
+      method: "GET",
+    },
+  );
+  return await res.json();
 };

@@ -22,6 +22,7 @@ import ProtectedRoute from "../(components)/ProtectedRoute";
 type ShopService = {
   service_id: string;
   shop_name: string;
+  cat_name: string;
   mobile: string;
   whatsapp_no: string;
   upload_service_img: string;
@@ -40,6 +41,7 @@ export default function ProductListScreen() {
   const [filteredServices, setFilteredServices] = useState<ShopService[]>([]);
 
   const [searchText, setSearchText] = useState("");
+  const [categorySearch, setCategorySearch] = useState("");
   const [products, setProducts] = useState(services);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -82,7 +84,7 @@ export default function ProductListScreen() {
         setProducts([...parsed, ...services]);
       };
       loadShops();
-    }, [])
+    }, []),
   );
 
   const applyFilter = (type: any) => {
@@ -102,16 +104,35 @@ export default function ProductListScreen() {
     setFilterVisible(false);
   };
 
+  // useEffect(() => {
+  //   if (searchText.trim() === "") {
+  //     setFilteredServices(services);
+  //   } else {
+  //     const filtered = services.filter((item) =>
+  //       item.shop_name.toLowerCase().includes(searchText.toLowerCase()),
+  //     );
+  //     setFilteredServices(filtered);
+  //   }
+
+  // }, [searchText, services]);
+
   useEffect(() => {
-    if (searchText.trim() === "") {
-      setFilteredServices(services);
-    } else {
-      const filtered = services.filter((item) =>
-        item.shop_name.toLowerCase().includes(searchText.toLowerCase())
+    let filtered = services;
+
+    if (searchText.trim() !== "") {
+      filtered = filtered.filter((item) =>
+        item.shop_name?.toLowerCase().includes(searchText.toLowerCase()),
       );
-      setFilteredServices(filtered);
     }
-  }, [searchText, services]);
+
+    if (categorySearch.trim() !== "") {
+      filtered = filtered.filter((item) =>
+        item.cat_name?.toLowerCase().includes(categorySearch.toLowerCase()),
+      );
+    }
+
+    setFilteredServices(filtered);
+  }, [searchText, categorySearch, services]);
 
   if (loading) {
     return (
@@ -167,7 +188,36 @@ export default function ProductListScreen() {
               clearButtonMode="while-editing"
             />
           </View>
-
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: "#E0F2FE",
+              borderColor: "#002B5B",
+              borderWidth: 0.5,
+              borderRadius: 10,
+              paddingHorizontal: 12,
+              marginTop: 15,
+              marginHorizontal: 15,
+            }}
+          >
+            <Ionicons name="search" size={20} color="#888" />
+            <TextInput
+              placeholder="Search by Category Name..."
+              value={categorySearch}
+              onChangeText={setCategorySearch}
+              style={{
+                flex: 1,
+                height: 40,
+                marginLeft: 8,
+                color: "#000",
+                fontSize: 16,
+              }}
+              autoCorrect={false}
+              autoCapitalize="none"
+              clearButtonMode="while-editing"
+            />
+          </View>
           <FlatList
             data={filteredServices}
             keyExtractor={(item) => item?.service_id}
@@ -201,6 +251,17 @@ export default function ProductListScreen() {
                   {item?.shop_name.charAt(0).toUpperCase() +
                     item.shop_name.slice(1)}
                 </Text>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "600",
+                    color: "#555",
+                    marginTop: 4,
+                    textTransform: "capitalize",
+                  }}
+                >
+                  {item?.cat_name}
+                </Text>
 
                 <View style={styles.buttonContainer}>
                   <TouchableOpacity
@@ -229,7 +290,6 @@ export default function ProductListScreen() {
               </View>
             )}
           />
-
           <Modal visible={filterVisible} transparent animationType="slide">
             <View style={styles.modalContainer}>
               <View style={styles.modalContent}>
@@ -245,8 +305,8 @@ export default function ProductListScreen() {
                       {type === "recommended"
                         ? "RECOMMENDED"
                         : type === "lowest"
-                        ? "LOWEST PRICE"
-                        : "HIGHEST PRICE"}
+                          ? "LOWEST PRICE"
+                          : "HIGHEST PRICE"}
                     </Text>
 
                     <Ionicons
@@ -272,7 +332,7 @@ export default function ProductListScreen() {
             </View>
           </Modal>
         </View>
-      </SafeAreaView>{" "}
+      </SafeAreaView>
     </ProtectedRoute>
   );
 }

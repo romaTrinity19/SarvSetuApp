@@ -65,7 +65,7 @@ const AccountScreen = () => {
   useFocusEffect(
     useCallback(() => {
       loadAndFetchUser();
-    }, [])
+    }, []),
   );
 
   useEffect(() => {
@@ -110,7 +110,7 @@ const AccountScreen = () => {
         const { reg_id } = JSON.parse(userData);
         const walletData = await fetchAllWalletData(reg_id);
         const walletAmount = walletData?.total || 0;
-        setWallet(walletAmount > 45 ? walletAmount : 0);
+        setWallet(walletAmount);
       }
     } catch (err) {
       console.error(err);

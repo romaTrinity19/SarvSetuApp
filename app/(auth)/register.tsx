@@ -171,22 +171,47 @@ const SignUpScreen = () => {
       }
     } catch (error: any) {
       if (error.response) {
-        console.error("API Error - Response Data:", error.response.data);
-        console.error("API Error - Status Code:", error.response.status);
-        console.error("API Error - Headers:", error.response.headers);
-      } else if (error.request) {
-        console.error(" API Error - No response received:", error.request);
+        const data = error.response.data;
+
+        // 👇 SAME AS LOGIN FLOW
+        if (data?.is_verified === 0) {
+          Toast.show({
+            type: "info",
+            text1: "Account not verified",
+            text2: "OTP sent. Please verify your account.",
+            position: "top",
+          });
+
+          router.push({
+            pathname: "/(auth)/otp",
+            params: {
+              otp: data.otp,
+              regId: data.reg_id,
+              contact_no: data.contact_no,
+              email: email,
+              firstName,
+              lastName,
+              password,
+              selectedState,
+            },
+          });
+          return;
+        }
+
+        // other errors
+        Toast.show({
+          type: "error",
+          text1: data?.message || "Registration failed",
+          position: "top",
+        });
       } else {
-        console.error("API Error - Error Message:", error.message);
+        Toast.show({
+          type: "error",
+          text1: "Network error",
+          text2: "Please try again later",
+          position: "top",
+        });
       }
-      Toast.show({
-        type: "error",
-        text1: "Registration Failed",
-        text2:
-          error.response?.data?.message ||
-          "Something went wrong. Please try again.",
-        position: "top",
-      });
     } finally {
       setLoading(false);
     }
@@ -265,38 +290,6 @@ const SignUpScreen = () => {
               />
             </View>
 
-            {/* Country Code + Phone */}
-            {/* <Text>Phone Number</Text>
-            <View style={styles.phoneRow}>
-              <View style={styles.flagBox}>
-                {/* <CountryPicker
-                  countryCode={countryCode}
-                  withFilter
-                  withFlag
-                  withCallingCode
-                  withEmoji
-                  onSelect={(country: Country) => {
-                    setCountryCode(country.cca2);
-                    setCountry(country);
-                  }}
-                /> */}
-            {/* <Text style={styles.phoneCode}>
-                  +{country?.callingCode?.[0] || "91"}
-                </Text>  }
-              </View>
-              <TextInput
-                placeholder="Phone Number"
-                placeholderTextColor="#555"
-                value={phone}
-                onChangeText={setPhone}
-                style={[
-                  styles.input,
-                  { flex: 1, marginLeft: 8, marginTop: 10, color: "black" },
-                ]}
-                keyboardType="numeric"
-              />
-            </View> */}
-
             {/* State Picker */}
             <Text style={styles.label}>State</Text>
             <View style={styles.pickerContainer}>
@@ -315,19 +308,6 @@ const SignUpScreen = () => {
                 ))}
               </Picker>
             </View>
-
-            {/* Role Picker */}
-            {/* <Text>Role</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={role}
-                onValueChange={(itemValue) => setRole(itemValue)}
-              >
-                <Picker.Item label="--Select Role--" value="" />
-                <Picker.Item label="User" value="user" />
-                <Picker.Item label="Merchant" value="vendor" />
-              </Picker>
-            </View> */}
 
             {/* Referral */}
             <Text>Referral Code</Text>

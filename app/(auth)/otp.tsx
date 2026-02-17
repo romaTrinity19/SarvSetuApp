@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
@@ -15,7 +14,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 const OtpScreen = () => {
-  const { otp: initialOtp, role, regId, firstName, lastName, password, email, phone } = useLocalSearchParams();
+  const {
+    otp: initialOtp,
+    role,
+    regId,
+    firstName,
+    lastName,
+    password,
+    email,
+    phone,
+  } = useLocalSearchParams();
   const [otpInput, setOtpInput] = useState<string[]>(Array(6).fill(""));
   const inputs = useRef<Array<TextInput | null>>([]);
   const [loading, setLoading] = useState(false);
@@ -26,7 +34,6 @@ const OtpScreen = () => {
   const [currentOtp, setCurrentOtp] = useState<string>(initialOtp as string); // Track latest valid OTP only
   const [hasResentOtp, setHasResentOtp] = useState(false);
 
-  
   // Timer logic
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
@@ -57,7 +64,7 @@ const OtpScreen = () => {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       if (response.data.status === "success") {
@@ -65,7 +72,6 @@ const OtpScreen = () => {
         if (newOtp) {
           setCurrentOtp(newOtp);
           setHasResentOtp(true);
-          
         }
 
         Toast.show({
@@ -129,7 +135,7 @@ const OtpScreen = () => {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       if (response.data?.status === "success") {
@@ -167,7 +173,9 @@ const OtpScreen = () => {
       <View style={styles.container}>
         <Text style={styles.title}>Enter OTP</Text>
         <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
-          <Text style={styles.subtitle}>OTP sent to your WhatsApp and Email.</Text>
+          <Text style={styles.subtitle}>
+            OTP sent to your WhatsApp and Email.
+          </Text>
 
           <View style={styles.otpContainer}>
             {otpInput.map((digit, index) => (
@@ -196,9 +204,16 @@ const OtpScreen = () => {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity disabled={isResendDisabled} onPress={handleResendOtp}>
-            <Text style={[styles.resendText, isResendDisabled && { opacity: 0.5 }]}>
-              {isResendDisabled ? `Resend OTP in ${resendTimer}s` : "Resend OTP"}
+          <TouchableOpacity
+            disabled={isResendDisabled}
+            onPress={handleResendOtp}
+          >
+            <Text
+              style={[styles.resendText, isResendDisabled && { opacity: 0.5 }]}
+            >
+              {isResendDisabled
+                ? `Resend OTP in ${resendTimer}s`
+                : "Resend OTP"}
             </Text>
           </TouchableOpacity>
         </View>

@@ -47,6 +47,9 @@ const EditProfileScreen = () => {
   const [selectedState, setSelectedState] = useState(" ");
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [upiId, setUpiId] = useState("");
+  const [accountNo, setAccountNo] = useState("");
+  const [ifscCode, setIfscCode] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState({
     old: false,
@@ -65,7 +68,7 @@ const EditProfileScreen = () => {
     const fetchStates = async () => {
       try {
         const response = await axios.get(
-          "https://sarvsetu.trinitycrm.in/admin/Api/registration_api.php?type=state"
+          "https://sarvsetu.trinitycrm.in/admin/Api/registration_api.php?type=state",
         );
 
         if (response.data && Array.isArray(response.data.data)) {
@@ -108,7 +111,7 @@ const EditProfileScreen = () => {
         {
           compress: 0.7,
           format: ImageManipulator.SaveFormat.JPEG,
-        }
+        },
       );
 
       setSelectedImage({ ...original, uri: compressed.uri });
@@ -145,6 +148,9 @@ const EditProfileScreen = () => {
     formData.append("state_id", selectedState);
     formData.append("old_pass", oldPassword);
     formData.append("new_pass", newPassword);
+    formData.append("upi_id", upiId);
+    formData.append("account_no", accountNo);
+    formData.append("ifsc_code", ifscCode);
     formData.append("type", "profileupdate");
 
     if (selectedImage) {
@@ -172,7 +178,7 @@ const EditProfileScreen = () => {
             "Content-Type": "multipart/form-data",
           },
           body: formData,
-        }
+        },
       );
 
       const result = await response.json();
@@ -224,7 +230,7 @@ const EditProfileScreen = () => {
                     Accept: "application/json",
                   },
                   body: formData,
-                }
+                },
               );
               const result = await response.json();
 
@@ -254,7 +260,7 @@ const EditProfileScreen = () => {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -271,6 +277,10 @@ const EditProfileScreen = () => {
           setLastName(freshUserData?.last_name || "");
           setEmail(freshUserData?.email || "");
           setPhone(freshUserData?.contact_no || "");
+          setUpiId(freshUserData?.upi_id || "");
+          setAccountNo(freshUserData?.account_no || "");
+          setIfscCode(freshUserData?.ifsc_code || "");
+          setOldPassword(freshUserData?.password || "");
           setSelectedState(freshUserData?.state_id);
         }
       } catch (error) {
@@ -354,7 +364,6 @@ const EditProfileScreen = () => {
                   )}
                 </TouchableOpacity>
               </View>
-
               <View style={styles.row}>
                 <View style={styles.inputContainer}>
                   <Text style={styles.label}>First Name</Text>
@@ -388,7 +397,6 @@ const EditProfileScreen = () => {
                 editable={false}
               />
               <Text style={styles.label}>Phone Number</Text>
-
               <View style={styles.row}>
                 <TextInput
                   style={[styles.input, { flex: 1 }]}
@@ -419,8 +427,32 @@ const EditProfileScreen = () => {
                   ))}
                 </Picker>
               </View>
-              <Text style={styles.sectionHeader}>Change Password</Text>
 
+              <Text style={styles.label}>UPI ID</Text>
+              <TextInput
+                style={[styles.input, { flex: 3 }]}
+                value={upiId}
+                onChangeText={setUpiId}
+                placeholder="Enter UPI ID"
+              />
+
+              <Text style={styles.label}>Account No.</Text>
+              <TextInput
+                style={[styles.input, { flex: 3 }]}
+                value={accountNo}
+                onChangeText={setAccountNo}
+                placeholder="Enter Account No."
+              />
+
+              <Text style={styles.label}>IFSC Code</Text>
+              <TextInput
+                style={[styles.input, { flex: 3 }]}
+                value={ifscCode}
+                onChangeText={setIfscCode}
+                placeholder="Enter IFSC Code"
+              />
+
+              <Text style={styles.sectionHeader}>Change Password</Text>
               <Text style={styles.label}>Old Password</Text>
               <PasswordInput
                 placeholder="Old Password"
@@ -432,7 +464,6 @@ const EditProfileScreen = () => {
                   setShowPassword({ ...showPassword, old: !showPassword.old })
                 }
               />
-
               <Text style={styles.label}>New Password</Text>
               <PasswordInput
                 placeholder="New Password"
@@ -458,7 +489,6 @@ const EditProfileScreen = () => {
                   })
                 }
               />
-
               <TouchableOpacity
                 style={[styles.saveButton, saving && { opacity: 0.7 }]}
                 disabled={saving}
@@ -470,7 +500,6 @@ const EditProfileScreen = () => {
                   <Text style={styles.saveButtonText}>Save</Text>
                 )}
               </TouchableOpacity>
-
               <TouchableOpacity
                 onPress={handleDeleteAccount}
                 style={{ marginBottom: 20 }}

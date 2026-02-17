@@ -3,6 +3,7 @@ import {
   fetchUserData,
   getCommissionSetting,
   getPackageIngfoForUser,
+  getWithdrawDaySetting,
 } from "@/components/utils/api";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -35,7 +36,6 @@ type PackageInfo = {
 
 export default function WalletScreen() {
   const [withdrawModalVisible, setWithdrawModalVisible] = useState(false);
-  const [addFundModalVisible, setAddFundModalVisible] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [upiId, setUpiId] = useState("");
   const [withdrawStatus, setWithdrawStatus] = useState("Pending");
@@ -54,12 +54,14 @@ export default function WalletScreen() {
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [commission, setCommission] = useState<any>(null);
-  const [serviceCharge, setServiceCharge] = useState(0);
-  const [adminCharge, setAdminCharge] = useState(0);
-  const [netAmount, setNetAmount] = useState(0);
+  // const [serviceCharge, setServiceCharge] = useState(0);
+  // const [adminCharge, setAdminCharge] = useState(0);
+  // const [netAmount, setNetAmount] = useState(0);
   const [comAmt, setComAmt] = useState(0);
+  const [withdrawDaySetting, setWithdrawDaySetting] = useState<any>(null);
+  const [isWithdrawAllowed, setIsWithdrawAllowed] = useState(false);
   const today = new Date();
-  const isMonday = today.getDay() === 1;
+  // const isMonday = today.getDay() === 1;
 
   const fetchCommission = async () => {
     try {
@@ -97,15 +99,15 @@ export default function WalletScreen() {
         if (walletData) {
           const walletAmount = walletData?.total || 0;
           const directAmt = walletData?.direct_referral || 0;
-          const finalWallet = walletAmount > 45 ? walletAmount : 0;
-          const finalDirect = finalWallet === 0 ? 0 : directAmt;
-          setWallet(finalWallet);
+          // const finalWallet = walletAmount > 45 ? walletAmount : 0;
+          // const finalDirect = finalWallet === 0 ? 0 : directAmt;
+          setWallet(walletAmount);
           setReferral(walletData?.referral);
           setStatusAmt(walletData?.status_amt);
           setStatusData(walletData?.withdraw_data);
           setAdminAmt(walletData?.admin_amt);
-          console.log(walletData?.admin_amt);
-          setDirectReferral(finalDirect);
+
+          setDirectReferral(directAmt);
         }
       }
     } catch (err) {
@@ -119,6 +121,13 @@ export default function WalletScreen() {
     loadAndFetchUser();
     fetchCommission();
   }, []);
+  useEffect(() => {
+    if (userData) {
+      setUpiId(userData?.upi_id ?? "");
+      setAccountNo(userData?.account_no ?? "");
+      setIfscCode(userData?.ifsc_code ?? "");
+    }
+  }, [userData]);
 
   const handleAmountChange = (text: any) => {
     setWithdrawAmount(text);
@@ -149,18 +158,18 @@ export default function WalletScreen() {
     const adminAmt = (amount * adminPer) / 100;
     const netAmt = amount - (serviceAmt + adminAmt);
 
-    // ✅ Save in state
-    setServiceCharge(serviceAmt);
-    setAdminCharge(adminAmt);
-    setNetAmount(netAmt);
+    // // ✅ Save in state
+    // setServiceCharge(serviceAmt);
+    // setAdminCharge(adminAmt);
+    // setNetAmount(netAmt);
 
     setErrorMsg("");
     setSuccessMsg(
       `Service Charge: ₹${serviceAmt.toFixed(
-        2
+        2,
       )} | Admin Charge: ₹${adminAmt.toFixed(
-        2
-      )} | You will receive: ₹${netAmt.toFixed(2)}`
+        2,
+      )} | You will receive: ₹${netAmt.toFixed(2)}`,
     );
   };
 
@@ -176,11 +185,8 @@ export default function WalletScreen() {
 
   const resetWithdrawFields = () => {
     setWithdrawAmount("");
-    setUpiId("");
     setErrorMsg("");
     setWithdrawStatus("Pending");
-    setAccountNo("");
-    setIfscCode("");
   };
 
   const handleWithdraw = async () => {
@@ -210,7 +216,7 @@ export default function WalletScreen() {
             type: "withdraw",
             reg_id: userData?.reg_id,
           }),
-        }
+        },
       );
 
       const data = await response.json();
@@ -242,6 +248,38 @@ export default function WalletScreen() {
     }
   };
 
+  const fetchWithdrawDay = async () => {
+    try {
+      const res = await getWithdrawDaySetting();
+      if (res.status === "success") {
+        setWithdrawDaySetting(res.data);
+
+        const today = new Date();
+        const dayIndex = today.getDay(); // 0 = Sunday ... 6 = Saturday
+
+        const dayMap: any = {
+          0: "sunday",
+          1: "monday",
+          2: "tuesday",
+          3: "wednesday",
+          4: "thursday",
+          5: "friday",
+          6: "saturday",
+        };
+
+        const todayKey = dayMap[dayIndex];
+
+        setIsWithdrawAllowed(res.data[todayKey] == 1);
+      }
+    } catch (err) {
+      console.error("Withdraw day fetch error", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchWithdrawDay();
+  }, []);
+
   return (
     <ProtectedRoute>
       <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
@@ -272,7 +310,7 @@ export default function WalletScreen() {
             style={styles.card}
           >
             <Text style={styles.cardTitle}>Total Wallet Balance</Text>
-            <Text style={styles.cardAmount}>₹ {wallet}</Text>
+            <Text style={styles.cardAmount}>₹ {wallet ?? 0}</Text>
           </LinearGradient>
 
           {/* Earnings */}
@@ -280,29 +318,35 @@ export default function WalletScreen() {
             <View style={styles.row}>
               <Text style={styles.label}>🎁 Direct Referral Earning</Text>
               <Text style={styles.value}>
-                : {"  "}₹ {directReferral}
+                : {"  "}₹ {directReferral ?? 0}
               </Text>
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>🎁 Indirect Referral Earning</Text>
               <Text style={styles.value}>
-                : {"  "}₹ {referral}
+                : {"  "}₹ {referral ?? 0}
               </Text>
             </View>
 
             <View style={styles.row}>
-              <Text style={styles.label}>📊 Status Earning</Text>
+              <Text style={styles.label}>📊 Status Earning </Text>
               <Text style={styles.value}>
-                : {"  "}₹ {statusAmt}
+                : {"  "}₹ {statusAmt ?? 0}
               </Text>
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>👤 Add By Admin</Text>
               <Text style={styles.value}>
-                : {"  "}₹ {adminAmt}
+                : {"  "}₹ {adminAmt ?? 0}
               </Text>
             </View>
           </View>
+          <TouchableOpacity
+            onPress={() => router.push("/(components)/statusEarningDetails")}
+            style={styles.viewBtn}
+          >
+            <Text style={styles.viewBtnText}>View Status Earning</Text>
+          </TouchableOpacity>
           <View
             style={{
               backgroundColor: "#E8F0FE",
@@ -334,14 +378,17 @@ export default function WalletScreen() {
             <TouchableOpacity
               style={[
                 styles.withdrawButton,
-                packageInfoUser?.[0]?.is_approved === "1" && wallet >= 500
+                packageInfoUser?.[0]?.is_approved === "1" &&
+                wallet >= 500 &&
+                isWithdrawAllowed
                   ? {}
                   : { backgroundColor: "#ccc" },
               ]}
               onPress={() => {
                 if (
                   packageInfoUser?.[0]?.is_approved === "1" &&
-                  wallet >= 500
+                  wallet >= 500 &&
+                  isWithdrawAllowed
                 ) {
                   setWithdrawModalVisible(true);
                 }
@@ -527,6 +574,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#444",
     width: "40%",
+  },
+  viewBtn: {
+    backgroundColor: "#002B5B",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+
+  viewBtnText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
   },
   headerContainer: {
     backgroundColor: "#4B65E9",
