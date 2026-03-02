@@ -379,7 +379,7 @@ export default function WalletScreen() {
               style={[
                 styles.withdrawButton,
                 packageInfoUser?.[0]?.is_approved === "1" &&
-                wallet >= 500 &&
+                wallet >= comAmt &&
                 isWithdrawAllowed
                   ? {}
                   : { backgroundColor: "#ccc" },
@@ -387,7 +387,7 @@ export default function WalletScreen() {
               onPress={() => {
                 if (
                   packageInfoUser?.[0]?.is_approved === "1" &&
-                  wallet >= 500 &&
+                  wallet >= comAmt &&
                   isWithdrawAllowed
                 ) {
                   setWithdrawModalVisible(true);

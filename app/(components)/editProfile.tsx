@@ -48,6 +48,7 @@ const EditProfileScreen = () => {
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [upiId, setUpiId] = useState("");
+  const [bankName, setBankName] = useState("");
   const [accountNo, setAccountNo] = useState("");
   const [ifscCode, setIfscCode] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -63,6 +64,10 @@ const EditProfileScreen = () => {
   const [states, setStates] = useState<State[]>([]);
   const [selectedImage, setSelectedImage] =
     useState<ImagePicker.ImagePickerAsset | null>(null);
+
+  const [qrImage, setQrImage] = useState<ImagePicker.ImagePickerAsset | null>(
+    null,
+  );
 
   useEffect(() => {
     const fetchStates = async () => {
@@ -82,6 +87,42 @@ const EditProfileScreen = () => {
     };
     fetchStates();
   }, []);
+
+  const pickQrImage = async () => {
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permissionResult.granted) {
+      Toast.show({
+        type: "error",
+        text1: "Permission Required",
+        text2: "Gallery access required!",
+        position: "top",
+      });
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: false,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const original = result.assets[0];
+
+      const compressed = await ImageManipulator.manipulateAsync(
+        original.uri,
+        [{ resize: { width: 800 } }],
+        {
+          compress: 0.7,
+          format: ImageManipulator.SaveFormat.JPEG,
+        },
+      );
+
+      setQrImage({ ...original, uri: compressed.uri });
+    }
+  };
 
   const pickImage = async () => {
     const permissionResult =
@@ -149,6 +190,7 @@ const EditProfileScreen = () => {
     formData.append("old_pass", oldPassword);
     formData.append("new_pass", newPassword);
     formData.append("upi_id", upiId);
+    formData.append("bank_name", bankName);
     formData.append("account_no", accountNo);
     formData.append("ifsc_code", ifscCode);
     formData.append("type", "profileupdate");
@@ -166,6 +208,28 @@ const EditProfileScreen = () => {
 
       formData.append("image", file);
     }
+    if (qrImage) {
+      const fileUri = qrImage.uri;
+      const fileName = qrImage.fileName || fileUri.split("/").pop() || "qr.jpg";
+
+      const file: any = {
+        uri: fileUri,
+        type: qrImage.mimeType || "image/jpeg",
+        name: fileName,
+      };
+
+      formData.append("qr_image", file);
+    }
+    if (!qrImage) {
+      Toast.show({
+        type: "error",
+        text1: "Please Select QR Code Image.",
+        text2: "Validation Error",
+        position: "top",
+      });
+
+      return;
+    }
 
     try {
       setSaving(true);
@@ -182,6 +246,7 @@ const EditProfileScreen = () => {
       );
 
       const result = await response.json();
+      console.log("result", result);
 
       if (result.status === "success") {
         Toast.show({
@@ -199,7 +264,7 @@ const EditProfileScreen = () => {
     } catch (error: any) {
       console.error("Profile update error:", error.message || error);
       Toast.show({
-        type: "errpr",
+        type: "error",
         text1: "Unable to update profile.",
         position: "top",
       });
@@ -278,6 +343,7 @@ const EditProfileScreen = () => {
           setEmail(freshUserData?.email || "");
           setPhone(freshUserData?.contact_no || "");
           setUpiId(freshUserData?.upi_id || "");
+          setBankName(freshUserData?.bank_name || "");
           setAccountNo(freshUserData?.account_no || "");
           setIfscCode(freshUserData?.ifsc_code || "");
           setOldPassword(freshUserData?.password || "");
@@ -426,6 +492,54 @@ const EditProfileScreen = () => {
                     />
                   ))}
                 </Picker>
+              </View>
+              <Text style={styles.label}>Bank Name</Text>
+              <TextInput
+                style={[styles.input, { flex: 3 }]}
+                value={bankName}
+                onChangeText={setBankName}
+                placeholder="Enter Bank Name"
+              />
+              <Text style={styles.label}>QR Code Image</Text>
+
+              <View style={{ alignItems: "center", marginBottom: 15 }}>
+                <TouchableOpacity
+                  onPress={pickQrImage}
+                  style={{
+                    width: 150,
+                    height: 150,
+                    borderWidth: 1,
+                    borderColor: "#ccc",
+                    borderRadius: 10,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    overflow: "hidden",
+                    backgroundColor: "#F8FAFC",
+                  }}
+                >
+                  {qrImage ? (
+                    <Image
+                      source={{ uri: qrImage.uri }}
+                      style={{ width: "100%", height: "100%" }}
+                      resizeMode="cover"
+                    />
+                  ) : userData?.qr_code_image ? (
+                    <Image
+                      source={{ uri: userData.qr_code_image }}
+                      style={{ width: "100%", height: "100%" }}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <>
+                      <Ionicons name="qr-code-outline" size={40} color="#888" />
+                      <Text
+                        style={{ fontSize: 12, marginTop: 5, color: "#555" }}
+                      >
+                        Upload QR
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
               </View>
 
               <Text style={styles.label}>UPI ID</Text>

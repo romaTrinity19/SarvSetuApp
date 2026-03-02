@@ -11,7 +11,6 @@ export const fetchUserData = async (reg_id: string) => {
     }
 
     const data = await response.json();
-
     // Extract the first user object from user_data array
     if (data.status === "success" && data.message?.user_data?.length > 0) {
       return data.message.user_data[0]; // <-- return user object here

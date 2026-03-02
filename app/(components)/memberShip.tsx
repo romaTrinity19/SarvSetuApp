@@ -59,7 +59,7 @@ const LifetimeMembershipScreen = () => {
             type: "getpackage_info",
             reg_id: userData?.reg_id,
           },
-        }
+        },
       );
       const data = response.data;
       if (data.status === "success" && data.message) {
@@ -120,23 +120,25 @@ const LifetimeMembershipScreen = () => {
             onPress={() => router.back()}
           />
           <ScrollView showsVerticalScrollIndicator={false}>
-            <Text style={styles.heading}>
-              Enjoy Lifetime Membership Features!
-            </Text>
+            <Text style={styles.heading}>Prime Member Benefits</Text>
             <View style={styles.horizontalLine} />
             <View style={styles.benefitList}>
               <Text style={styles.benefit}>
-                ✓ Enjoy a lifetime membership with just one payment
+                ✓ Earn rewards through eligible promotional activities.
               </Text>
               <Text style={styles.benefit}>
-                ✓ Get early access to new events, promotions, or exclusive
-                content.
+                ✓ Get referral rewards as per program terms.
               </Text>
               <Text style={styles.benefit}>
-                ✓ Exclusive ability to refer products & earn money.
+                ✓ Enjoy 1%–25% rewards on selected merchant transactions (T&C
+                apply).
               </Text>
               <Text style={styles.benefit}>
-                ✓ Share product deals & discounts with friends.
+                ✓ Register as a Merchant/Service Provider and unlock earning
+                opportunities.
+              </Text>
+              <Text style={styles.benefit}>
+                ✓ Upgrade to Prime and access exclusive reward benefits today!
               </Text>
             </View>
 

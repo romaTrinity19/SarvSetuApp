@@ -53,7 +53,7 @@ const ReferAndEarn = () => {
 
     const message = `🚀 Hey! Download the *SarvSetu App* today.  
 
-🎁 Use my referral code *${referralCode}* while signing up and get *₹50 bonus instantly*! 💸  
+🎁 Use my referral code *${referralCode}* while signing up!   
 
 👉 Install now: https://sarvsetu.trinitycrm.in`;
 

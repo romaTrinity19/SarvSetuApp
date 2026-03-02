@@ -1,7 +1,7 @@
 import { fetchShopServices } from "@/components/utils/api";
-import Entypo from "@expo/vector-icons/Entypo";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 import { router, useFocusEffect } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -9,7 +9,6 @@ import {
   FlatList,
   Image,
   Linking,
-  Modal,
   StatusBar,
   StyleSheet,
   Text,
@@ -17,6 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Dropdown } from "react-native-element-dropdown";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ProtectedRoute from "../(components)/ProtectedRoute";
 type ShopService = {
@@ -33,15 +33,14 @@ type ShopService = {
 };
 
 export default function ProductListScreen() {
-  const [filterVisible, setFilterVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [category, setCategory] = useState<any[]>([]);
 
-  const [selectedFilter, setSelectedFilter] = useState("recommended");
   const [services, setServices] = useState<ShopService[]>([]);
   const [filteredServices, setFilteredServices] = useState<ShopService[]>([]);
 
   const [searchText, setSearchText] = useState("");
-  const [categorySearch, setCategorySearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [products, setProducts] = useState(services);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -87,35 +86,6 @@ export default function ProductListScreen() {
     }, []),
   );
 
-  const applyFilter = (type: any) => {
-    setFilterVisible(false);
-    if (type === "lowest") {
-      setProducts([...products].sort((a: any, b: any) => a.price - b.price));
-    } else if (type === "highest") {
-      setProducts([...products].sort((a: any, b: any) => b.price - a.price));
-    } else {
-      setProducts(services);
-    }
-  };
-
-  const handleFilterSelection = (filterType: any) => {
-    setSelectedFilter(filterType);
-    applyFilter(filterType);
-    setFilterVisible(false);
-  };
-
-  // useEffect(() => {
-  //   if (searchText.trim() === "") {
-  //     setFilteredServices(services);
-  //   } else {
-  //     const filtered = services.filter((item) =>
-  //       item.shop_name.toLowerCase().includes(searchText.toLowerCase()),
-  //     );
-  //     setFilteredServices(filtered);
-  //   }
-
-  // }, [searchText, services]);
-
   useEffect(() => {
     let filtered = services;
 
@@ -125,15 +95,51 @@ export default function ProductListScreen() {
       );
     }
 
-    if (categorySearch.trim() !== "") {
+    setFilteredServices(filtered);
+  }, [searchText, services]);
+
+  useEffect(() => {
+    const fetchCategory = async () => {
+      try {
+        const response = await axios.get(
+          "https://sarvsetu.trinitycrm.in/admin/Api/registration_api.php?type=get_category",
+        );
+
+        if (response.data && Array.isArray(response.data.data)) {
+          const apiCategories = response.data.data;
+
+          const updatedCategories = [
+            { category_id: "all", cat_name: "Select All" },
+            ...apiCategories,
+          ];
+
+          setCategory(updatedCategories);
+        }
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      }
+    };
+
+    fetchCategory();
+  }, []);
+
+  const applyCategoryFilter = () => {
+    let filtered = services;
+
+    if (selectedCategory && selectedCategory !== "all") {
+      filtered = filtered.filter(
+        (item: any) => item.category_id == selectedCategory,
+      );
+    }
+
+    if (searchText.trim() !== "") {
       filtered = filtered.filter((item) =>
-        item.cat_name?.toLowerCase().includes(categorySearch.toLowerCase()),
+        item.shop_name?.toLowerCase().includes(searchText.toLowerCase()),
       );
     }
 
     setFilteredServices(filtered);
-  }, [searchText, categorySearch, services]);
-
+  };
   if (loading) {
     return (
       <View
@@ -157,6 +163,7 @@ export default function ProductListScreen() {
             <Text style={styles.headerText}>Shop & Services</Text>
           </View>
           <View style={styles.horizontalLine} />
+
           {/* Search Input */}
           <View
             style={{
@@ -192,32 +199,49 @@ export default function ProductListScreen() {
             style={{
               flexDirection: "row",
               alignItems: "center",
-              backgroundColor: "#E0F2FE",
-              borderColor: "#002B5B",
-              borderWidth: 0.5,
-              borderRadius: 10,
-              paddingHorizontal: 12,
-              marginTop: 15,
               marginHorizontal: 15,
+              marginTop: 15,
             }}
           >
-            <Ionicons name="search" size={20} color="#888" />
-            <TextInput
-              placeholder="Search by Category Name..."
-              value={categorySearch}
-              onChangeText={setCategorySearch}
+            <View style={{ flex: 1 }}>
+              <Dropdown
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 8,
+                  paddingHorizontal: 10,
+                  height: 45,
+                }}
+                data={category}
+                search
+                labelField="cat_name"
+                valueField="category_id"
+                placeholder="Select Category"
+                searchPlaceholder="Search category..."
+                value={selectedCategory}
+                onChange={(item) => {
+                  setSelectedCategory(item.category_id);
+                }}
+              />
+            </View>
+
+            {/* 🔥 Mini Apply Button */}
+            <TouchableOpacity
               style={{
-                flex: 1,
-                height: 40,
                 marginLeft: 8,
-                color: "#000",
-                fontSize: 16,
+                backgroundColor: "#002B5B",
+                paddingVertical: 10,
+                paddingHorizontal: 12,
+                borderRadius: 8,
               }}
-              autoCorrect={false}
-              autoCapitalize="none"
-              clearButtonMode="while-editing"
-            />
+              onPress={applyCategoryFilter}
+            >
+              <Text style={{ color: "#fff", fontSize: 12, fontWeight: "bold" }}>
+                Apply
+              </Text>
+            </TouchableOpacity>
           </View>
+
           <FlatList
             data={filteredServices}
             keyExtractor={(item) => item?.service_id}
@@ -290,47 +314,6 @@ export default function ProductListScreen() {
               </View>
             )}
           />
-          <Modal visible={filterVisible} transparent animationType="slide">
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Sort By</Text>
-
-                {["recommended", "lowest", "highest"].map((type) => (
-                  <TouchableOpacity
-                    key={type}
-                    style={styles.radioRow}
-                    onPress={() => handleFilterSelection(type)}
-                  >
-                    <Text style={styles.radioLabel}>
-                      {type === "recommended"
-                        ? "RECOMMENDED"
-                        : type === "lowest"
-                          ? "LOWEST PRICE"
-                          : "HIGHEST PRICE"}
-                    </Text>
-
-                    <Ionicons
-                      name={
-                        selectedFilter === type
-                          ? "radio-button-on"
-                          : "radio-button-off"
-                      }
-                      size={20}
-                      color="#002B5B"
-                      style={{ marginRight: 10 }}
-                    />
-                  </TouchableOpacity>
-                ))}
-
-                <TouchableOpacity
-                  onPress={() => setFilterVisible(false)}
-                  style={styles.closeButton}
-                >
-                  <Entypo name="cross" size={24} color="black" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
         </View>
       </SafeAreaView>
     </ProtectedRoute>
@@ -399,22 +382,7 @@ const styles = StyleSheet.create({
   radioLabel: {
     fontSize: 16,
   },
-  modalContainer: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.3)",
-  },
-  modalContent: {
-    backgroundColor: "white",
-    padding: 20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 15,
-  },
+
   closeButton: {
     position: "absolute",
     right: 15,
