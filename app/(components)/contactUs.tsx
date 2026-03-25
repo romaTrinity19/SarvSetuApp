@@ -1,10 +1,13 @@
 import { fetchUserData } from "@/components/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as ImageManipulator from "expo-image-manipulator";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -27,6 +30,43 @@ const ContactUs = () => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [userData, setUserData] = useState<any>(null);
+  const [uploadImage, setUploadImage] =
+    useState<ImagePicker.ImagePickerAsset | null>(null);
+
+  const pickQrImage = async () => {
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Toast.show({
+        type: "error",
+        text1: "Permission Required",
+        text2: "Gallery access required!",
+        position: "top",
+      });
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: false,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const original = result.assets[0];
+
+      const compressed = await ImageManipulator.manipulateAsync(
+        original.uri,
+        [{ resize: { width: 800 } }],
+        {
+          compress: 0.7,
+          format: ImageManipulator.SaveFormat.JPEG,
+        },
+      );
+
+      setUploadImage({ ...original, uri: compressed.uri });
+    }
+  };
 
   useEffect(() => {
     const loadAndFetchUser = async () => {
@@ -77,6 +117,19 @@ const ContactUs = () => {
     formData.append("message", message);
     formData.append("reg_id", userData?.reg_id || "");
     formData.append("type", "contact_us");
+    if (uploadImage) {
+      const fileUri = uploadImage.uri;
+      const fileName =
+        uploadImage.fileName || fileUri.split("/").pop() || "upload_image.jpg";
+
+      const file: any = {
+        uri: fileUri,
+        type: uploadImage.mimeType || "image/jpeg",
+        name: fileName,
+      };
+
+      formData.append("image", file);
+    }
 
     try {
       const response = await fetch(
@@ -87,7 +140,7 @@ const ContactUs = () => {
             Accept: "application/json",
           },
           body: formData,
-        }
+        },
       );
 
       const result = await response.json();
@@ -103,6 +156,7 @@ const ContactUs = () => {
         setPhone("");
         setSubject("");
         setMessage("");
+        setUploadImage(null);
       } else {
         Toast.show({
           type: "error",
@@ -194,6 +248,52 @@ const ContactUs = () => {
                   placeholder="Subject"
                   placeholderTextColor="#555"
                 />
+
+                <Text style={styles.label}>Upload Image</Text>
+
+                <View style={{ alignItems: "center", marginBottom: 15 }}>
+                  <TouchableOpacity
+                    onPress={pickQrImage}
+                    style={{
+                      width: 150,
+                      height: 150,
+                      borderWidth: 1,
+                      borderColor: "#ccc",
+                      borderRadius: 10,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      overflow: "hidden",
+                      backgroundColor: "#F8FAFC",
+                    }}
+                  >
+                    {uploadImage ? (
+                      <Image
+                        source={{ uri: uploadImage.uri }}
+                        style={{ width: "100%", height: "100%" }}
+                        resizeMode="cover"
+                      />
+                    ) : userData?.qr_code_image ? (
+                      <Image
+                        source={{ uri: userData.qr_code_image }}
+                        style={{ width: "100%", height: "100%" }}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <>
+                        <Ionicons
+                          name="cloud-upload-outline"
+                          size={40}
+                          color="#888"
+                        />
+                        <Text
+                          style={{ fontSize: 12, marginTop: 5, color: "#555" }}
+                        >
+                          Upload Image
+                        </Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
 
                 <Text style={styles.label}>Message</Text>
                 <TextInput

@@ -316,26 +316,26 @@ export default function WalletScreen() {
           {/* Earnings */}
           <View style={styles.infoCard}>
             <View style={styles.row}>
-              <Text style={styles.label}>🎁 Direct Referral Earning</Text>
+              <Text style={styles.label}>🎁 Direct Referral Reward</Text>
               <Text style={styles.value}>
                 : {"  "}₹ {directReferral ?? 0}
               </Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>🎁 Indirect Referral Earning</Text>
+              <Text style={styles.label}>🎁 Promotional Incentive Reward</Text>
               <Text style={styles.value}>
                 : {"  "}₹ {referral ?? 0}
               </Text>
             </View>
 
             <View style={styles.row}>
-              <Text style={styles.label}>📊 Status Earning </Text>
+              <Text style={styles.label}>📊 Status Reward </Text>
               <Text style={styles.value}>
                 : {"  "}₹ {statusAmt ?? 0}
               </Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>👤 Add By Admin</Text>
+              <Text style={styles.label}>👤 Cashback</Text>
               <Text style={styles.value}>
                 : {"  "}₹ {adminAmt ?? 0}
               </Text>

@@ -135,7 +135,7 @@ const AdCard: React.FC<AdCardProps> = ({
   return (
     <View style={styles.card}>
       <View style={styles.payoutBadge}>
-        <Text style={styles.payoutText}>Payout: ₹{payout}</Text>
+        <Text style={styles.payoutText}>Promotion RP: ₹{payout}</Text>
       </View>
 
       <TouchableOpacity onPress={() => setFullscreenVisible(true)}>

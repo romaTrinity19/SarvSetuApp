@@ -84,7 +84,7 @@ const ReferAndEarn = () => {
               <Text style={styles.subHeader}>How It Works</Text>
 
               <View style={styles.card}>
-                <Text style={styles.cardTitle}>DIRECT REFERRAL</Text>
+                <Text style={styles.cardTitle}>DIRECT REFERRAL REWARD</Text>
                 <Text style={styles.cardReward}>Earn ₹100.00</Text>
                 <Text style={styles.cardDescription}>
                   when someone you refer buys a subscription.
@@ -92,7 +92,9 @@ const ReferAndEarn = () => {
               </View>
 
               <View style={styles.card}>
-                <Text style={styles.cardTitle}>INDIRECT REFERRAL</Text>
+                <Text style={styles.cardTitle}>
+                  PROMOTIONAL INCENTIVE REWARD
+                </Text>
                 <Text style={styles.cardReward}>Earn Additional ₹50.00</Text>
                 <Text style={styles.cardDescription}>
                   When your referred friend refers someone else who buys a
