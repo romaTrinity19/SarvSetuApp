@@ -187,6 +187,50 @@ export const getCommissionSetting = async () => {
   }
 };
 
+export const getRewardIncome = async () => {
+  try {
+    const response = await axios.get(
+      "https://sarvsetu.trinitycrm.in/admin/Api/registration_api.php",
+      {
+        params: {
+          type: "get_reward_income",
+        },
+      },
+    );
+
+    if (response.data.status === "success") {
+      return response.data.data;
+    } else {
+      throw new Error(response.data.message);
+    }
+  } catch (error) {
+    console.error("Reward Income API Error:", error);
+    throw error;
+  }
+};
+
+export const getHelpWhatsppNo = async () => {
+  try {
+    const response = await axios.get(
+      "https://sarvsetu.trinitycrm.in/admin/Api/dashboard_api.php",
+      {
+        params: {
+          type: "get_help_whatsapp",
+        },
+      },
+    );
+
+    if (response.data.status === "success") {
+      return response.data.data;
+    } else {
+      throw new Error(response.data.message);
+    }
+  } catch (error) {
+    console.error("Reward Income API Error:", error);
+    throw error;
+  }
+};
+
 export const getReferralTeam = async (regId: any) => {
   try {
     const response = await axios.get(

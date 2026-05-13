@@ -24,7 +24,7 @@ type StatusListItem = {
   id: string;
   image: string;
   amount: number;
-  status: "approved" | "rejected" | "cancel";
+  status: "approved" | "rejected" | "pending";
 };
 export default function StatusEarningDetails() {
   const [loading, setLoading] = useState(true);
@@ -71,7 +71,7 @@ export default function StatusEarningDetails() {
                 ? "approved"
                 : item.is_approve == 2
                   ? "rejected"
-                  : "cancel",
+                  : "pending",
           })),
         );
 
@@ -153,7 +153,7 @@ export default function StatusEarningDetails() {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardLabel}>Cancelled</Text>
+          <Text style={styles.cardLabel}>Pending</Text>
           <Text style={styles.cardValue}>{cancelCount}</Text>
         </View>
       </View>

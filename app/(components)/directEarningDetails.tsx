@@ -7,7 +7,6 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Linking,
   StatusBar,
   StyleSheet,
   Text,
@@ -22,16 +21,16 @@ type GrandChild = {
   reg_id: number;
   name: string;
   contact_no: string;
-  package_name?: string;
-  amount?: number;
+
+  income?: number;
 };
 
 type ReferralUser = {
   reg_id: number;
   name: string;
   contact_no: string;
-  package_name?: string;
-  amount?: number;
+
+  income?: number;
   children: GrandChild[];
 };
 
@@ -39,8 +38,8 @@ type ReferralApiResponse = {
   status: string;
   team: ReferralUser[];
   summary: {
-    direct_referrals: number;
-    indirect_referrals: number;
+    direct_income: number;
+    indirect_income: number;
     total_team: number;
   };
 };
@@ -54,14 +53,6 @@ const ReferralTeam = () => {
   const [summary, setSummary] = useState<ReferralApiResponse["summary"] | null>(
     null,
   );
-
-  const openWhatsApp = (phone: string) => {
-    let url = `whatsapp://send?phone=91${phone}`; // 91 = India country code
-
-    Linking.openURL(url).catch(() => {
-      alert("WhatsApp not installed");
-    });
-  };
 
   useEffect(() => {
     init();
@@ -99,13 +90,11 @@ const ReferralTeam = () => {
     <View key={child.reg_id} style={styles.grandChildRow}>
       <View style={styles.verticalLine} />
       <View style={styles.grandChildCard}>
-        <TouchableOpacity onPress={() => openWhatsApp(child.contact_no)}>
-          <Text style={styles.grandChildName}>{child.name}</Text>
-          <Text style={styles.grandChildMobile}>{child.contact_no}</Text>
-          {child.package_name && (
-            <Text style={styles.packageSmall}>{child.package_name}</Text>
-          )}
-        </TouchableOpacity>
+        <Text style={styles.grandChildName}>{child.name}</Text>
+        <Text style={styles.grandChildMobile}>{child.contact_no}</Text>
+        {child.income && (
+          <Text style={styles.packageSmall}>₹{child.income}</Text>
+        )}
       </View>
     </View>
   );
@@ -117,15 +106,12 @@ const ReferralTeam = () => {
         <View style={{ flex: 1 }}>
           <Text style={styles.name}>{item.name}</Text>
           <Text style={styles.mobile}>{item.contact_no}</Text>
-          {item.package_name && (
-            <Text style={styles.package}>{item.package_name}</Text>
-          )}
+          {item.income && <Text style={styles.package}>₹{item.income}</Text>}
         </View>
-        <TouchableOpacity onPress={() => openWhatsApp(item.contact_no)}>
-          <View style={[styles.badge, styles.directBadge]}>
-            <Text style={styles.badgeText}>Child</Text>
-          </View>
-        </TouchableOpacity>
+
+        <View style={[styles.badge, styles.directBadge]}>
+          <Text style={styles.badgeText}>Child</Text>
+        </View>
       </View>
 
       {/* GRAND CHILDREN */}
@@ -155,25 +141,21 @@ const ReferralTeam = () => {
           >
             <Ionicons name="arrow-back" color="#000" size={24} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Referral Team</Text>
+          <Text style={styles.headerTitle}>Direct/Promotive Reward</Text>
         </View>
 
         {summary && (
           <View style={styles.summaryCard}>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Direct</Text>
-              <Text style={styles.summaryValue}>
-                {summary.direct_referrals}
-              </Text>
+              <Text style={styles.summaryValue}>{summary.direct_income}</Text>
             </View>
 
             <View style={styles.divider} />
 
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Indirect</Text>
-              <Text style={styles.summaryValue}>
-                {summary.indirect_referrals}
-              </Text>
+              <Text style={styles.summaryValue}>{summary.indirect_income}</Text>
             </View>
           </View>
         )}

@@ -50,7 +50,9 @@ Join our community of developers creating universal apps.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
 
 ## apk
-
 eas build:configure
 
 eas build -p android --profile preview
+
+eas build:configure
+eas build -p android --profile production

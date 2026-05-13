@@ -23,13 +23,14 @@ import Toast from "react-native-toast-message";
 import ProtectedRoute from "./ProtectedRoute";
 
 const ContactUs = () => {
+  const [userData, setUserData] = useState<any>(null);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [userData, setUserData] = useState<any>(null);
+
   const [uploadImage, setUploadImage] =
     useState<ImagePicker.ImagePickerAsset | null>(null);
 
@@ -175,7 +176,15 @@ const ContactUs = () => {
       setLoading(false);
     }
   };
-
+  useEffect(() => {
+    if (userData) {
+      setFullName(
+        `${userData.first_name || ""} ${userData.last_name || ""}`.trim(),
+      );
+      setEmail(userData.email || "");
+      setPhone(userData.contact_no || "");
+    }
+  }, [userData]);
   return (
     <ProtectedRoute>
       <SafeAreaView
@@ -269,12 +278,6 @@ const ContactUs = () => {
                     {uploadImage ? (
                       <Image
                         source={{ uri: uploadImage.uri }}
-                        style={{ width: "100%", height: "100%" }}
-                        resizeMode="cover"
-                      />
-                    ) : userData?.qr_code_image ? (
-                      <Image
-                        source={{ uri: userData.qr_code_image }}
                         style={{ width: "100%", height: "100%" }}
                         resizeMode="cover"
                       />

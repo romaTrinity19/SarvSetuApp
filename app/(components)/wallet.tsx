@@ -59,6 +59,7 @@ export default function WalletScreen() {
   // const [netAmount, setNetAmount] = useState(0);
   const [comAmt, setComAmt] = useState(0);
   const [withdrawDaySetting, setWithdrawDaySetting] = useState<any>(null);
+  const [withdrawText, setWithdrawText] = useState<any>(null);
   const [isWithdrawAllowed, setIsWithdrawAllowed] = useState(false);
   const today = new Date();
   // const isMonday = today.getDay() === 1;
@@ -68,6 +69,7 @@ export default function WalletScreen() {
       const data = await getCommissionSetting();
       setCommission(data);
       setComAmt(data?.minimum_withdraw || 500);
+      setWithdrawText(data?.withdraw_text || 500);
     } catch (err) {
       console.log(err);
     } finally {
@@ -102,7 +104,7 @@ export default function WalletScreen() {
           // const finalWallet = walletAmount > 45 ? walletAmount : 0;
           // const finalDirect = finalWallet === 0 ? 0 : directAmt;
           setWallet(walletAmount);
-          setReferral(walletData?.referral);
+          setReferral(walletData?.referral); // indirect
           setStatusAmt(walletData?.status_amt);
           setStatusData(walletData?.withdraw_data);
           setAdminAmt(walletData?.admin_amt);
@@ -224,7 +226,7 @@ export default function WalletScreen() {
         Toast.show({
           type: "success",
           text1: data.message,
-          text2: "Withdraw reqest successfully submitted",
+          text2: "Withdraw request successfully submitted",
           position: "top",
         });
 
@@ -341,12 +343,57 @@ export default function WalletScreen() {
               </Text>
             </View>
           </View>
-          <TouchableOpacity
-            onPress={() => router.push("/(components)/statusEarningDetails")}
-            style={styles.viewBtn}
-          >
-            <Text style={styles.viewBtnText}>View Status Earning</Text>
-          </TouchableOpacity>
+          <View style={styles.cardContainer}>
+            <TouchableOpacity
+              onPress={() => router.push("/(components)/statusEarningDetails")}
+              style={styles.cardBtn}
+            >
+              <View style={styles.iconCircle}>
+                <Ionicons name="cash-outline" size={18} color="#002B5B" />
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cardTitle2}>Status Reward</Text>
+                <Text style={styles.cardSubtitle}>
+                  View your status-based earnings
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#002B5B" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("/(components)/directEarningDetails")}
+              style={styles.cardBtn}
+            >
+              <View style={styles.iconCircle}>
+                <Ionicons name="people-outline" size={18} color="#002B5B" />
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cardTitle2}>
+                  Direct / Promotional Reward
+                </Text>
+                <Text style={styles.cardSubtitle}>Track referral earnings</Text>
+              </View>
+
+              <Ionicons name="chevron-forward" size={18} color="#002B5B" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("/(components)/cashbackDetails")}
+              style={styles.cardBtn}
+            >
+              <View style={styles.iconCircle}>
+                <Ionicons name="cash-outline" size={18} color="#002B5B" />
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cardTitle2}>Cashback Report</Text>
+                <Text style={styles.cardSubtitle}>View your Cashback</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#002B5B" />
+            </TouchableOpacity>
+          </View>
           <View
             style={{
               backgroundColor: "#E8F0FE",
@@ -360,17 +407,16 @@ export default function WalletScreen() {
             <Ionicons
               name="information-circle-outline"
               size={20}
-              color="#1B49F2"
+              color="#002B5B"
             />
             <Text
               style={{
-                color: "#1B49F2",
+                color: "#002B5B",
                 fontWeight: "600",
                 fontSize: 14,
               }}
             >
-              Withdraw Request allowed only on Monday And Minimum Withdraw
-              Request ₹ {comAmt}
+              {withdrawText}
             </Text>
           </View>
           {/* Buttons */}
@@ -420,29 +466,51 @@ export default function WalletScreen() {
                 {/* Withdraw Amount */}
                 <View style={styles.statusRow}>
                   <Text style={styles.statusLabel}>Withdraw Amount</Text>
-                  <Text style={[styles.statusValue, { color: "red" }]}>
+                  <Text style={[styles.statusValue, { color: "#EF4444" }]}>
+                    ₹{item.price}
+                  </Text>
+                </View>
+
+                {/* Service Charge */}
+                <View style={styles.statusRow}>
+                  <Text style={styles.statusLabel}>Service Charge</Text>
+                  <Text style={[styles.statusValue, { color: "#EF4444" }]}>
+                    ₹
+                    {Number(item.service_charge_amt || 0) +
+                      Number(item.admin_charge_amt || 0)}
+                  </Text>
+                </View>
+
+                {/* Payable Amount (GREEN ✅) */}
+                <View style={styles.statusRow}>
+                  <Text style={styles.statusLabel}>Payable Amount</Text>
+                  <Text style={[styles.statusValue, { color: "#16A34A" }]}>
                     ₹{item.payable_amt}
                   </Text>
                 </View>
 
                 {/* UPI ID */}
-                <View style={styles.statusRow}>
-                  <Text style={styles.statusLabel}>UPI ID</Text>
-                  <Text style={styles.statusValue}>{item.upi_id}</Text>
-                </View>
+                {item.upi_id ? (
+                  <View style={styles.statusRow}>
+                    <Text style={styles.statusLabel}>UPI ID</Text>
+                    <Text style={styles.statusValue}>{item.upi_id}</Text>
+                  </View>
+                ) : null}
 
                 {/* Account No */}
-                <View style={styles.statusRow}>
-                  <Text style={styles.statusLabel}>Account No</Text>
-                  <Text style={styles.statusValue}>{item.account_no}</Text>
-                </View>
-
+                {item.account_no ? (
+                  <View style={styles.statusRow}>
+                    <Text style={styles.statusLabel}>Account No</Text>
+                    <Text style={styles.statusValue}>{item.account_no}</Text>
+                  </View>
+                ) : null}
                 {/* IFSC Code */}
-                <View style={styles.statusRow}>
-                  <Text style={styles.statusLabel}>IFSC Code</Text>
-                  <Text style={styles.statusValue}>{item.ifsc_code}</Text>
-                </View>
-
+                {item.ifsc_code ? (
+                  <View style={styles.statusRow}>
+                    <Text style={styles.statusLabel}>IFSC Code</Text>
+                    <Text style={styles.statusValue}>{item.ifsc_code}</Text>
+                  </View>
+                ) : null}
                 {/* Withdraw Status */}
                 <View style={styles.statusRow}>
                   <Text style={styles.statusLabel}>Withdraw Status</Text>
@@ -580,6 +648,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
+    marginTop: 2,
   },
 
   viewBtnText: {
@@ -751,5 +820,40 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     width: "50%",
+  },
+  cardContainer: {
+    marginTop: 10,
+    gap: 12,
+  },
+
+  cardBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8FAFF",
+    padding: 14,
+    borderRadius: 12,
+    elevation: 2,
+  },
+
+  iconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#E6ECFF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+
+  cardTitle2: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#1E293B",
+  },
+
+  cardSubtitle: {
+    fontSize: 12,
+    color: "#64748B",
+    marginTop: 2,
   },
 });

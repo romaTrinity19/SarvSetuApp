@@ -32,6 +32,7 @@ type State = {
 const SignUpScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [referralloading, setReferralLoading] = useState(false);
   // const [countryCode, setCountryCode] = useState<CountryCode>("IN");
   // const [country, setCountry] = useState<Country | null>(null);
   // Form fields
@@ -44,16 +45,21 @@ const SignUpScreen = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [states, setStates] = useState<State[]>([]);
+  const [subDistrict, setSubDistrict] = useState<any[]>([]);
+  const [district, setDistrict] = useState<any[]>([]);
   const [selectedState, setSelectedState] = useState("");
+  const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [selectedSubDistrict, setSelectedSubDistrict] = useState("");
   const [loading, setLoading] = useState(false);
   const [isValid, setIsValid] = useState<boolean | null>(null);
-
+  const [referralName, setReferralName] = useState("");
   const checkReferral = async (code: string) => {
     if (!code) {
       setIsValid(null);
       return;
     }
     try {
+      setReferralLoading(true);
       const response = await fetch(
         `https://sarvsetu.trinitycrm.in/admin/Api/registration_api.php?type=check_referral`,
         {
@@ -68,12 +74,16 @@ const SignUpScreen = () => {
       const data = await response.json();
       if (data.status === "success") {
         setIsValid(true);
+        setReferralName(data.referral_name);
       } else {
         setIsValid(false);
+        setReferralName("");
       }
     } catch (err) {
       console.error("Referral check error:", err);
       setIsValid(false);
+    } finally {
+      setReferralLoading(false);
     }
   };
 
@@ -93,6 +103,7 @@ const SignUpScreen = () => {
         console.error("Failed to fetch states:", error);
       }
     };
+
     fetchStates();
   }, []);
 
@@ -136,6 +147,8 @@ const SignUpScreen = () => {
           email: email,
           contact_no: phone,
           state_id: selectedState,
+          district_id: selectedDistrict,
+          subdis_id: selectedSubDistrict,
           referral_code: referral,
           password: password,
           role: "user",
@@ -217,6 +230,54 @@ const SignUpScreen = () => {
     }
   };
 
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      if (referral) {
+        checkReferral(referral);
+      }
+    }, 500);
+
+    return () => clearTimeout(delay);
+  }, [referral]);
+
+  const handleStateChange = async (stateId: string) => {
+    setSelectedState(stateId);
+    setSelectedDistrict("");
+    setSelectedSubDistrict("");
+    setDistrict([]);
+    setSubDistrict([]);
+
+    try {
+      const response = await axios.get(
+        `https://sarvsetu.trinitycrm.in/admin/Api/registration_api.php?type=district&state_id=${stateId}`,
+      );
+
+      if (response.data && Array.isArray(response.data.data)) {
+        setDistrict(response.data.data);
+      }
+    } catch (error) {
+      console.error("District fetch error:", error);
+    }
+  };
+
+  const handleDistrictChange = async (districtId: string) => {
+    setSelectedDistrict(districtId);
+    setSelectedSubDistrict("");
+    setSubDistrict([]);
+
+    try {
+      const response = await axios.get(
+        `https://sarvsetu.trinitycrm.in/admin/Api/registration_api.php?type=sub_district&district_id=${districtId}`,
+      );
+
+      if (response.data && Array.isArray(response.data.data)) {
+        setSubDistrict(response.data.data);
+      }
+    } catch (error) {
+      console.error("Sub-district fetch error:", error);
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
@@ -240,7 +301,9 @@ const SignUpScreen = () => {
             {/* First and Last Name */}
             <View style={styles.row}>
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>First Name</Text>
+                <Text style={styles.label}>
+                  First Name <Text style={{ color: "red" }}>*</Text>
+                </Text>
                 <TextInput
                   placeholder="First Name"
                   placeholderTextColor="#555"
@@ -261,9 +324,10 @@ const SignUpScreen = () => {
                 />
               </View>
             </View>
-
             {/* Email */}
-            <Text style={styles.label}>Email Address</Text>
+            <Text style={styles.label}>
+              Email Address <Text style={{ color: "red" }}>*</Text>
+            </Text>
             <TextInput
               placeholder="Email Address"
               placeholderTextColor="#555"
@@ -272,8 +336,9 @@ const SignUpScreen = () => {
               keyboardType="email-address"
               style={styles.input}
             />
-
-            <Text style={styles.label}>Phone Number</Text>
+            <Text style={styles.label}>
+              Phone Number <Text style={{ color: "red" }}>*</Text>
+            </Text>
             <View style={styles.phoneRow}>
               <Text style={styles.flag}>🇮🇳</Text>
               <Text>+91</Text>
@@ -281,7 +346,11 @@ const SignUpScreen = () => {
                 placeholder="Phone Number"
                 placeholderTextColor="#555"
                 value={phone}
-                onChangeText={setPhone}
+                onChangeText={(text) => {
+                  // 🔥 only numbers + max 10 digits
+                  const cleaned = text.replace(/[^0-9]/g, "");
+                  setPhone(cleaned.slice(0, 10));
+                }}
                 style={[
                   styles.input,
                   { flex: 1, marginLeft: 8, marginTop: 10, color: "black" },
@@ -289,13 +358,15 @@ const SignUpScreen = () => {
                 keyboardType="numeric"
               />
             </View>
-
             {/* State Picker */}
-            <Text style={styles.label}>State</Text>
+            <Text style={styles.label}>
+              State <Text style={{ color: "red" }}>*</Text>
+            </Text>
             <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={selectedState}
-                onValueChange={(itemValue) => setSelectedState(itemValue)}
+                // onValueChange={(itemValue) => setSelectedState(itemValue)}
+                onValueChange={(itemValue) => handleStateChange(itemValue)}
               >
                 <Picker.Item label="--Select State--" value="" />
                 {states.map((st) => (
@@ -309,6 +380,41 @@ const SignUpScreen = () => {
               </Picker>
             </View>
 
+            <Text style={styles.label}>District</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={selectedDistrict}
+                //onValueChange={(itemValue) => setSelectedDistrict(itemValue)}
+                onValueChange={(itemValue) => handleDistrictChange(itemValue)}
+              >
+                <Picker.Item label="--Select District--" value="" />
+                {district.map((st) => (
+                  <Picker.Item
+                    key={st.district_id}
+                    label={st?.district_name}
+                    value={st?.district_id}
+                    color="black"
+                  />
+                ))}
+              </Picker>
+            </View>
+            <Text style={styles.label}>Sub-district</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={selectedSubDistrict}
+                onValueChange={(itemValue) => setSelectedSubDistrict(itemValue)}
+              >
+                <Picker.Item label="--Select Sub-district--" value="" />
+                {subDistrict.map((st) => (
+                  <Picker.Item
+                    key={st.subdis_id}
+                    label={st?.subdis_name}
+                    value={st?.subdis_id}
+                    color="black"
+                  />
+                ))}
+              </Picker>
+            </View>
             {/* Referral */}
             <Text>Referral Code</Text>
             <TextInput
@@ -316,23 +422,37 @@ const SignUpScreen = () => {
               placeholderTextColor="#555"
               value={referral}
               onChangeText={(text) => {
-                setReferral(text);
+                setReferral(text.toUpperCase()); // 🔥 auto uppercase
+                setIsValid(null);
               }}
               onBlur={() => checkReferral(referral)}
               style={styles.input}
             />
-            {/* {isValid === true && (
-              <Text style={{ color: "green", marginBottom: 20 }}>
-                Valid Code
+            {referralloading && (
+              <Text style={{ color: "#999", marginBottom: 10 }}>
+                Checking...
               </Text>
-            )} */}
+            )}
+            {isValid === true && (
+              <View style={{ marginBottom: 20 }}>
+                <Text style={{ color: "green" }}>Valid Code</Text>
+
+                <Text
+                  style={{ color: "#002B5B", fontWeight: "600", marginTop: 3 }}
+                >
+                  Referred By: {referralName}
+                </Text>
+              </View>
+            )}
             {isValid === false && (
               <Text style={{ color: "red", marginBottom: 20 }}>
                 Invalid Code
               </Text>
             )}
             {/* Password */}
-            <Text>Password</Text>
+            <Text>
+              Password <Text style={{ color: "red" }}>*</Text>
+            </Text>
             <View style={styles.passwordBox}>
               <TextInput
                 placeholder="Set Password"
@@ -353,9 +473,10 @@ const SignUpScreen = () => {
                 />
               </TouchableOpacity>
             </View>
-
             {/* Confirm Password */}
-            <Text>Confirm Password</Text>
+            <Text>
+              Confirm Password <Text style={{ color: "red" }}>*</Text>
+            </Text>
             <View style={styles.passwordBox}>
               <TextInput
                 placeholder="Confirm Password"
@@ -376,7 +497,6 @@ const SignUpScreen = () => {
                 />
               </TouchableOpacity>
             </View>
-
             {/* Submit Button */}
             <TouchableOpacity
               style={styles.signUpButton}
@@ -389,7 +509,6 @@ const SignUpScreen = () => {
                 <Text style={styles.signUpText}>Sign Up</Text>
               )}
             </TouchableOpacity>
-
             <Text style={styles.footerText}>
               By signing up, agree to the{" "}
               <Text

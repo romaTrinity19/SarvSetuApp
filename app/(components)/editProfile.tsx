@@ -58,6 +58,11 @@ const EditProfileScreen = () => {
     confirm: false,
   });
 
+  const [subDistrict, setSubDistrict] = useState<any[]>([]);
+  const [district, setDistrict] = useState<any[]>([]);
+
+  const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [selectedSubDistrict, setSelectedSubDistrict] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [userData, setUserData] = useState<any>(null);
@@ -187,6 +192,8 @@ const EditProfileScreen = () => {
     formData.append("reg_id", userData?.reg_id || "");
     formData.append("last_name", lastName);
     formData.append("state_id", selectedState);
+    formData.append("district_id", selectedDistrict);
+    formData.append("subdis_id", selectedSubDistrict);
     formData.append("old_pass", oldPassword);
     formData.append("new_pass", newPassword);
     formData.append("upi_id", upiId);
@@ -220,14 +227,13 @@ const EditProfileScreen = () => {
 
       formData.append("qr_image", file);
     }
-    if (!qrImage) {
+    if (!qrImage && !userData?.qr_code_image) {
       Toast.show({
         type: "error",
         text1: "Please Select QR Code Image.",
         text2: "Validation Error",
         position: "top",
       });
-
       return;
     }
 
@@ -246,7 +252,6 @@ const EditProfileScreen = () => {
       );
 
       const result = await response.json();
-      console.log("result", result);
 
       if (result.status === "success") {
         Toast.show({
@@ -338,6 +343,7 @@ const EditProfileScreen = () => {
           const regId = parsedUser?.reg_id;
           const freshUserData = await fetchUserData(regId);
           setUserData(freshUserData || parsedUser);
+          console.log("freshUserData", freshUserData);
           setFirstName(freshUserData?.first_name || "");
           setLastName(freshUserData?.last_name || "");
           setEmail(freshUserData?.email || "");
@@ -347,7 +353,34 @@ const EditProfileScreen = () => {
           setAccountNo(freshUserData?.account_no || "");
           setIfscCode(freshUserData?.ifsc_code || "");
           setOldPassword(freshUserData?.password || "");
-          setSelectedState(freshUserData?.state_id);
+
+          if (freshUserData?.state_id) {
+            setSelectedState(freshUserData?.state_id);
+
+            // 👉 fetch district
+            const districtRes = await axios.get(
+              `https://sarvsetu.trinitycrm.in/admin/Api/registration_api.php?type=district&state_id=${freshUserData.state_id}`,
+            );
+
+            const districtData = districtRes.data.data || [];
+            setDistrict(districtData);
+
+            if (freshUserData?.district_id) {
+              setSelectedDistrict(freshUserData.district_id);
+
+              // 👉 fetch subdistrict
+              const subRes = await axios.get(
+                `https://sarvsetu.trinitycrm.in/admin/Api/registration_api.php?type=sub_district&district_id=${freshUserData.district_id}`,
+              );
+
+              const subData = subRes.data.data || [];
+              setSubDistrict(subData);
+
+              if (freshUserData?.subdis_id) {
+                setSelectedSubDistrict(freshUserData.subdis_id);
+              }
+            }
+          }
         }
       } catch (error) {
         console.error("Error loading user data:", error);
@@ -357,6 +390,44 @@ const EditProfileScreen = () => {
     };
     loadAndFetchUser();
   }, []);
+
+  const handleStateChange = async (stateId: string) => {
+    setSelectedState(stateId);
+    setSelectedDistrict("");
+    setSelectedSubDistrict("");
+    setDistrict([]);
+    setSubDistrict([]);
+
+    try {
+      const response = await axios.get(
+        `https://sarvsetu.trinitycrm.in/admin/Api/registration_api.php?type=district&state_id=${stateId}`,
+      );
+
+      if (response.data && Array.isArray(response.data.data)) {
+        setDistrict(response.data.data);
+      }
+    } catch (error) {
+      console.error("District fetch error:", error);
+    }
+  };
+
+  const handleDistrictChange = async (districtId: string) => {
+    setSelectedDistrict(districtId);
+    setSelectedSubDistrict("");
+    setSubDistrict([]);
+
+    try {
+      const response = await axios.get(
+        `https://sarvsetu.trinitycrm.in/admin/Api/registration_api.php?type=sub_district&district_id=${districtId}`,
+      );
+
+      if (response.data && Array.isArray(response.data.data)) {
+        setSubDistrict(response.data.data);
+      }
+    } catch (error) {
+      console.error("Sub-district fetch error:", error);
+    }
+  };
 
   if (loading) {
     return (
@@ -481,7 +552,8 @@ const EditProfileScreen = () => {
               <View style={styles.pickerWrapper}>
                 <Picker
                   selectedValue={selectedState}
-                  onValueChange={(itemValue) => setSelectedState(itemValue)}
+                  //onValueChange={(itemValue) => setSelectedState(itemValue)}
+                  onValueChange={(itemValue) => handleStateChange(itemValue)}
                 >
                   <Picker.Item label="--Select State--" value="" />
                   {states.map((st) => (
@@ -489,6 +561,43 @@ const EditProfileScreen = () => {
                       key={st.id}
                       label={st?.state_name}
                       value={st?.id}
+                    />
+                  ))}
+                </Picker>
+              </View>
+              <Text style={styles.label}>District</Text>
+              <View style={styles.pickerWrapper}>
+                <Picker
+                  selectedValue={selectedDistrict}
+                  //onValueChange={(itemValue) => setSelectedDistrict(itemValue)}
+                  onValueChange={(itemValue) => handleDistrictChange(itemValue)}
+                >
+                  <Picker.Item label="--Select District--" value="" />
+                  {district.map((st) => (
+                    <Picker.Item
+                      key={st.district_id}
+                      label={st?.district_name}
+                      value={st?.district_id}
+                      color="black"
+                    />
+                  ))}
+                </Picker>
+              </View>
+              <Text style={styles.label}>Sub-district</Text>
+              <View style={styles.pickerWrapper}>
+                <Picker
+                  selectedValue={selectedSubDistrict}
+                  onValueChange={(itemValue) =>
+                    setSelectedSubDistrict(itemValue)
+                  }
+                >
+                  <Picker.Item label="--Select Sub-district--" value="" />
+                  {subDistrict.map((st) => (
+                    <Picker.Item
+                      key={st.subdis_id}
+                      label={st?.subdis_name}
+                      value={st?.subdis_id}
+                      color="black"
                     />
                   ))}
                 </Picker>

@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo2.png",
-    "scheme": "adbisapp",
+    "scheme": "SarvSetu",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -17,7 +17,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.romachakradhari.AdbisApp"
+      "package": "com.sarvsetuhelp"
     },
     "web": {
       "bundler": "metro",
@@ -47,6 +47,7 @@
       "eas": {
         "projectId": "a9fa27d9-0678-40d5-93d4-b1b986dae466"
       }
-    }
+    },
+    "owner": "romachakradhari"
   }
 }

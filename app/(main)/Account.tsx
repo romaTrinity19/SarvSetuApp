@@ -1,6 +1,7 @@
 import {
   fetchAllWalletData,
   fetchUserData,
+  getHelpWhatsppNo,
   getPackageIngfo,
   getPackageIngfoForUser,
 } from "@/components/utils/api";
@@ -10,6 +11,7 @@ import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Image,
+  Linking,
   RefreshControl,
   ScrollView,
   StatusBar,
@@ -32,6 +34,7 @@ const AccountScreen = () => {
   const [packageInfo, setPackageInfo] = useState<PackageInfo[]>([]);
   const [packageInfoUser, setPackageInfoUser] = useState<PackageInfo[]>([]);
   const [wallet, setWallet] = useState<any>(null);
+  const [whatsapp, setWhatsapp] = useState<any>(null);
   const initial = name?.charAt(0).toUpperCase();
   const [refreshing, setRefreshing] = useState(false);
   const handleLogout = async () => {
@@ -42,7 +45,14 @@ const AccountScreen = () => {
       console.error("Failed to logout:", error);
     }
   };
+  const openWhatsApp = () => {
+    const message = "Hello Admin, I need help"; // optional
+    const url = `https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`;
 
+    Linking.openURL(url).catch(() => {
+      alert("Make sure WhatsApp is installed");
+    });
+  };
   const loadAndFetchUser = async () => {
     try {
       const storedUser = await AsyncStorage.getItem("userData");
@@ -50,11 +60,19 @@ const AccountScreen = () => {
         const parsedUser = JSON.parse(storedUser);
         const regId = parsedUser?.reg_id;
         const freshUserData = await fetchUserData(regId);
-
         setUserData(freshUserData || parsedUser);
       }
     } catch (error) {
       console.error("Error loading user data:", error);
+    }
+  };
+
+  const fetchWhatsappMobile = async () => {
+    try {
+      const data = await getHelpWhatsppNo();
+      setWhatsapp(data?.mobile || 100);
+    } catch (err) {
+      console.log(err);
     }
   };
 
@@ -119,6 +137,7 @@ const AccountScreen = () => {
 
   useEffect(() => {
     getWallet();
+    fetchWhatsappMobile();
   }, []);
   const subtitle = `Total Wallet Amount - ₹${wallet}`;
 
@@ -220,8 +239,8 @@ const AccountScreen = () => {
             />
             <MenuItem
               title="Help"
-              subtitle="Learn Easily with Video Guides"
-              route="/(components)/help"
+              subtitle="Click to Redirect Admin's Whatsapp"
+              onPress={openWhatsApp} // 👈 instead of route
             />
             <MenuItem
               title="Contact Us"
@@ -252,11 +271,13 @@ const MenuItem = ({
   title,
   subtitle,
   route,
+  onPress,
   highlightAmount = false,
 }: {
   title: string;
   subtitle: string;
-  route: any;
+  route?: any; // 👈 make optional (important)
+  onPress?: () => void;
   highlightAmount?: boolean;
 }) => {
   const renderSubtitle = () => {
@@ -275,7 +296,13 @@ const MenuItem = ({
   return (
     <TouchableOpacity
       style={styles.listItem}
-      onPress={() => router.push(route)}
+      onPress={() => {
+        if (onPress) {
+          onPress(); // ✅ WhatsApp or custom action
+        } else if (route) {
+          router.push(route); // ✅ normal navigation
+        }
+      }}
     >
       <View>
         <Text style={styles.title}>{title}</Text>

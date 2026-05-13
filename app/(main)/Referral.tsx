@@ -1,4 +1,8 @@
-import { fetchUserData } from "@/components/utils/api";
+import {
+  fetchUserData,
+  getCommissionSetting,
+  getRewardIncome,
+} from "@/components/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
@@ -20,6 +24,10 @@ import ProtectedRoute from "../(components)/ProtectedRoute";
 
 const ReferAndEarn = () => {
   const [userData, setUserData] = useState<any>(null);
+  const [appUrl, setAppUrl] = useState<any>(null);
+  const [directIncome, setDirectIncome] = useState<any>(null);
+  const [indirectIncome, setIndirectIncome] = useState<any>(null);
+
   const referralCode = userData?.reg_code;
 
   const copyToClipboard = () => {
@@ -40,9 +48,30 @@ const ReferAndEarn = () => {
       console.error("Error loading user data:", error);
     }
   };
+  const fetchRewardIncome = async () => {
+    try {
+      const data = await getRewardIncome();
 
+      setDirectIncome(data?.direct_income || 100);
+      setIndirectIncome(data?.indirect_income || 50);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const fetchCommission = async () => {
+    try {
+      const data = await getCommissionSetting();
+
+      setAppUrl(data?.app_url || "");
+    } catch (err) {
+      console.log(err);
+    }
+  };
   useEffect(() => {
     loadAndFetchUser();
+    fetchCommission();
+    fetchRewardIncome();
   }, []);
 
   const shareOnWhatsApp = () => {
@@ -55,7 +84,7 @@ const ReferAndEarn = () => {
 
 🎁 Use my referral code *${referralCode}* while signing up!   
 
-👉 Install now: https://sarvsetu.trinitycrm.in`;
+👉 Install now: ${appUrl}`;
 
     const url = `whatsapp://send?text=${encodeURIComponent(message)}`;
 
@@ -82,10 +111,9 @@ const ReferAndEarn = () => {
 
             <View style={{ paddingHorizontal: 18 }}>
               <Text style={styles.subHeader}>How It Works</Text>
-
               <View style={styles.card}>
                 <Text style={styles.cardTitle}>DIRECT REFERRAL REWARD</Text>
-                <Text style={styles.cardReward}>Earn ₹100.00</Text>
+                <Text style={styles.cardReward}>Earn ₹{directIncome}</Text>
                 <Text style={styles.cardDescription}>
                   when someone you refer buys a subscription.
                 </Text>
@@ -95,13 +123,14 @@ const ReferAndEarn = () => {
                 <Text style={styles.cardTitle}>
                   PROMOTIONAL INCENTIVE REWARD
                 </Text>
-                <Text style={styles.cardReward}>Earn Additional ₹50.00</Text>
+                <Text style={styles.cardReward}>
+                  Earn Additional ₹{indirectIncome}
+                </Text>
                 <Text style={styles.cardDescription}>
                   When your referred friend refers someone else who buys a
                   subscription.
                 </Text>
               </View>
-
               <View style={styles.referralBox}>
                 <TextInput
                   style={styles.referralInput}
@@ -112,14 +141,12 @@ const ReferAndEarn = () => {
                   <Ionicons name="copy-outline" size={24} color="#002855" />
                 </TouchableOpacity>
               </View>
-
               <TouchableOpacity
                 style={styles.buttonPrimary}
                 onPress={shareOnWhatsApp}
               >
                 <Text style={styles.buttonText}>Refer Now</Text>
               </TouchableOpacity>
-
               <TouchableOpacity
                 style={styles.buttonOutline}
                 onPress={() => {
